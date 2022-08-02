@@ -23,7 +23,7 @@ end
 
 function MenuSelfSetup(menu_root)
     -- Self Menu
-    menuIdTbl['Super Run'] = menu.list(menu_root, 'Super Run', {}, '')
-    menuIdTbl['Super Flight'] = menu.list(menu_root, 'Super Flight', {}, '')
+    menuIdTbl['Self.Super Run'] = menu.list(menu_root, 'Super Run', {}, '')
+    menuIdTbl['Self.Super Flight'] = menu.list(menu_root, 'Super Flight', {}, '')
     menu.toggle(menu_root, 'Super Jump', {}, '', function(toggle) DoSuperJump(toggle) end)
 end

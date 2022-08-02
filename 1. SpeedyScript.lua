@@ -28,8 +28,8 @@ local function Init()
     menuIdTbl['Debug'] = menu.list(menu.my_root(), 'Debug', {}, '')
 
     MenuSelfSetup(menuIdTbl['Self'])
-    MenuSuperRunSetup(menuIdTbl['Super Run'])
-    MenuSuperFlightSetup(menuIdTbl['Super Flight'])
+    MenuSuperRunSetup(menuIdTbl['Self.Super Run'])
+    MenuSuperFlightSetup(menuIdTbl['Self.Super Flight'])
 
     MenuDebugOptionsSetup(menuIdTbl['Debug'])
 end
