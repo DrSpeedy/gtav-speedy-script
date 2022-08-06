@@ -1,4 +1,5 @@
 local bPadHandlerEnabled = false
+local iTickDelay = 8
 local PadData = {}
 
 function StartPadHandler()
@@ -10,7 +11,8 @@ function StartPadHandler()
 			iTicksPressed = 0,
 			iTicksSinceLastPress = 0,
 			bIsLongHold = false,
-			iTapCounter = 0
+			iTapCounter = 0,
+			bIsSinglePress = false
 		}
 	end
 
@@ -23,15 +25,16 @@ function StartPadHandler()
 				local lasttick = PadData[key].iTicksSinceLastPress
 				local tapcounter = PadData[key].iTapCounter
 				local longhold = false
-				if (curtick >= 10) then
+
+				if (curtick >= iTickDelay) then
 					longhold = true
 				end
 
-				if (lasttick <= 10 and not PadData[key].bIsPressed) then
+				if (lasttick <= iTickDelay and not PadData[key].bIsPressed) then
 					tapcounter = tapcounter + 1
 				end
 
-				if (lasttick > 10) then
+				if (lasttick > iTickDelay) then
 					tapcounter = 0
 				end
 
@@ -42,19 +45,29 @@ function StartPadHandler()
 					iTicksPressed = curtick + 1,
 					iTicksSinceLastPress = 0,
 					bIsLongHold = longhold,
-					iTapCounter = tapcounter
+					iTapCounter = tapcounter,
+					bIsSinglePress = false
 				}
 			end
 
 			if (PAD.IS_CONTROL_RELEASED(2, key_code)) then
+				local pressed = PadData[key].bIsPressed
+				local curtick = PadData[key].iTicksPressed
 				local lasttick = PadData[key].iTicksSinceLastPress
 				local tapcounter = PadData[key].iTapCounter
+
+				local singlepress = false
+				if (pressed and curtick < iTickDelay) then
+					singlepress = true
+				end
+
 				PadData[key] = {
 					bIsPressed = false,
 					iTicksPressed = 0,
 					iTicksSinceLastPress = lasttick + 1,
 					bIsLongHold = false,
-					iTapCounter = tapcounter
+					iTapCounter = tapcounter,
+					bIsSinglePress = singlepress
 				}
 			end
 		end
@@ -62,21 +75,24 @@ function StartPadHandler()
 	end)
 end
 
-function PadKeyDown(key_index)
-	return PadData[key_index].bIsPressed
-end
-
-function GetPadKeyTaps(key_index)
-	return PadData[key_index].iTapCounter
-end
-
-function GetPadKeyLongHold(key_index)
-	return PadData[key_index].bIsLongHold
-end
-
-function GetPadKeySinglePress(key_index)
+function PadMultiTapHold(key_index, taps)
 	local data = PadData[key_index]
-	return data.iTapCounter == 0 and data.bIsPressed
+	return data.iTapCounter == taps and data.bIsLongHold
+end
+
+function PadSingleHold(key_index)
+	local data = PadData[key_index]
+	return data.bIsLongHold
+end
+
+function PadMultiTap(key_index, taps)
+	local data = PadData[key_index]
+	return data.iTapCounter == taps and data.bIsSinglePress
+end
+
+function PadSingleTap(key_index)
+	local data = PadData[key_index]
+	return data.bIsSinglePress
 end
 
 function StopPadHandler()

@@ -1,32 +1,28 @@
 -- DrSpeedy#1852
 -- https://github.com/DrSpeedy
 
+local bSuperJumpEnabled = false
 local bOnFootAimbotEnabled = false
 
 local function DoSuperJump(toggle)
+    bSuperJumpEnabled = toggle
     util.create_tick_handler(function()
-        if (toggle) then
-            local player = PLAYER.PLAYER_PED_ID()
-            local jumping = PED.IS_PED_JUMPING(player)
-            local velocity = ENTITY.GET_ENTITY_VELOCITY(player)
-            local direction = ENTITY.GET_ENTITY_FORWARD_VECTOR(player)
+        local player = PLAYER.PLAYER_PED_ID()
+        local jumping = PED.IS_PED_JUMPING(player)
+        local velocity = ENTITY.GET_ENTITY_VELOCITY(player)
+        local direction = ENTITY.GET_ENTITY_FORWARD_VECTOR(player)
 
-            if(jumping) then
-                if(GetPadKeyTaps('X') == 1 and PadKeyDown('X')) then  -- X
-                    ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z + 3)
-                    --if(velocity.z > 0.3)then
-                    --    ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z+3)
-                    --end
-                end
-            end
+        if(jumping and PadMultiTap('X', 1)) then
+            ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), 20)
         end
+        return bSuperJumpEnabled
     end)
 end
 
 local function DoOnFootAimbot(toggle)
     bOnFootAimbotEnabled = toggle
     util.create_tick_handler(function()
-        if (PAD.IS_CONTROL_PRESSED(2, keys['LT'])) then
+        if (PadSingleHold('LT')) then
             local player = PLAYER.PLAYER_PED_ID()
             local aim_coords = GetOffsetFromCam(80)
             local target_id = GetClosestPlayerToCoords(aim_coords, 80)
@@ -34,10 +30,10 @@ local function DoOnFootAimbot(toggle)
                 local target_ped = PLAYER.GET_PLAYER_PED(target_id)
                 local target_coords = ENTITY.GET_ENTITY_COORDS(target_ped)
 
-                if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY_IN_FRONT(player, target_ped)) then
-                    TASK.TASK_TURN_PED_TO_FACE_COORD(player, target_coords.x, target_coords.y, target_coords.z, 1)
-                    TASK.TASK_AIM_GUN_AT_COORD(player, target_coords.x, target_coords.y, target_coords.z, 1, 1, 1)
-                end
+                --if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY_IN_FRONT(player, target_ped)) then
+                --    TASK.TASK_TURN_PED_TO_FACE_COORD(player, target_coords.x, target_coords.y, target_coords.z, 1)
+                --    TASK.TASK_AIM_GUN_AT_COORD(player, target_coords.x, target_coords.y, target_coords.z, 1, 1, 1)
+                --end
             end
         end
         return bOnFootAimbotEnabled
