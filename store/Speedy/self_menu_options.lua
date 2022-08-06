@@ -12,11 +12,11 @@ local function DoSuperJump(toggle)
             local direction = ENTITY.GET_ENTITY_FORWARD_VECTOR(player)
 
             if(jumping) then
-                if(PAD.IS_CONTROL_PRESSED(2,keys['X'])) then  -- X
-                    ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z)
-                    if(velocity.z > 0.3)then
-                        ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z+3)
-                    end
+                if(GetPadKeyTaps('X') == 1 and PadKeyDown('X')) then  -- X
+                    ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z + 3)
+                    --if(velocity.z > 0.3)then
+                    --    ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z+3)
+                    --end
                 end
             end
         end

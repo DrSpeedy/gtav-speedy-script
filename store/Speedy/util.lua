@@ -2,6 +2,12 @@
 -- DrSpeedy#1852
 -- https://github.com/DrSpeedy
 
+function Notification(message)
+	message = '[Test] ' .. message:gsub('[~]%w[~]', '')
+	if not string.match(message, '[%.?]$') then message = message .. '.' end
+	util.toast(message, TOAST_ABOVE_MAP)
+end
+
 function RotationToDirection(rotation) --https://forum.cfx.re/t/get-position-where-player-is-aiming/1903886/2
 	local adjusted_rotation =
 	{

@@ -1,6 +1,7 @@
 {
     "Lua.diagnostics.globals": [
         "menuIdTbl",
-        "keys"
+        "keys",
+        "TOAST_ABOVE_MAP"
     ]
 }

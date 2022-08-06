@@ -15,6 +15,7 @@ keys['LEFT_AN_DOWN'] = 196
 keys['LEFT_AN_UP'] = 32
 
 require 'store/Speedy/util'
+require 'store/Speedy/pad_handler'
 -- Self
 require 'store/Speedy/superrun_options'
 require 'store/Speedy/superflight_options'
@@ -23,6 +24,7 @@ require 'store/Speedy/self_menu_options'
 require 'store/Speedy/debug_options'
 
 local function Init()
+    StartPadHandler()
     -- Main Menu
     menuIdTbl['Self'] = menu.list(menu.my_root(), 'Self', {}, '')
     menuIdTbl['Debug'] = menu.list(menu.my_root(), 'Debug', {}, '')
