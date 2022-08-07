@@ -1,5 +1,8 @@
+-- DrSpeedy#1852
+-- https://github.com/DrSpeedy
+
 local bPadHandlerEnabled = false
-local iTickDelay = 8
+local iTickDelay = 8 -- Number of ticks allowed between button taps/switching from single press to hold
 local PadData = {}
 
 function StartPadHandler()
@@ -17,10 +20,8 @@ function StartPadHandler()
 	end
 
 	util.create_tick_handler(function()
-		--util.draw_debug_text('PadHandler running')
 		for key, key_code in pairs(keys) do
 			if (PAD.IS_CONTROL_PRESSED(2, key_code)) then
-				--util.draw_debug_text(key .. ' Pressed')
 				local curtick = PadData[key].iTicksPressed
 				local lasttick = PadData[key].iTicksSinceLastPress
 				local tapcounter = PadData[key].iTapCounter
@@ -38,8 +39,6 @@ function StartPadHandler()
 					tapcounter = 0
 				end
 
-				--util.draw_debug_text('' .. PadData[key].iTicksPressed)
-				--util.draw_debug_text('Tap Counter: ' .. key .. ' ' .. PadData[key].iTapCounter)
 				PadData[key] = {
 					bIsPressed = true,
 					iTicksPressed = curtick + 1,
@@ -80,7 +79,7 @@ function PadMultiTapHold(key_index, taps)
 	return data.iTapCounter == taps and data.bIsLongHold
 end
 
-function PadSingleHold(key_index)
+function PadSingleTapHold(key_index)
 	local data = PadData[key_index]
 	return data.bIsLongHold
 end

@@ -1,13 +1,8 @@
 # DrSpeedy#1852
 # https://github.com/DrSpeedy
 
-$TARGET_DIR="C:\Users\bwils\AppData\Roaming\Stand\Lua Scripts"
-$SOURCE_DIR=""
+$TARGET_DIR="$env:APPDATA\Stand\Lua Scripts"
+$SOURCE_DIR=".\*"
+$EXCLUDE_FILES=@('.vscode', 'deploy.ps1', '.git')
 
-Get-ChildItem -Path $SOURCE_DIR -Recurse |
-ForEach-Object {
-    if ($_.BaseName -ne '.vscode' -And $_.BaseName -ne 'deploy' -And $_.BaseName -ne 'Speedy') {
-        echo $_.FullName
-        Copy-Item $_.FullName -Destination $TARGET_DIR -Recurse -Force
-    }
-}
+Copy-Item -Path $SOURCE_DIR -Destination $TARGET_DIR -Exclude $EXCLUDE_FILES -Recurse -Force

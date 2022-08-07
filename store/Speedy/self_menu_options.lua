@@ -12,8 +12,8 @@ local function DoSuperJump(toggle)
         local velocity = ENTITY.GET_ENTITY_VELOCITY(player)
         local direction = ENTITY.GET_ENTITY_FORWARD_VECTOR(player)
 
-        if(jumping and PadMultiTap('X', 1)) then
-            ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), 20)
+        if(jumping and PadMultiTapHold('X', 1)) then
+            ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z + 3)
         end
         return bSuperJumpEnabled
     end)
@@ -22,7 +22,7 @@ end
 local function DoOnFootAimbot(toggle)
     bOnFootAimbotEnabled = toggle
     util.create_tick_handler(function()
-        if (PadSingleHold('LT')) then
+        if (PadSingleTapHold('LT')) then
             local player = PLAYER.PLAYER_PED_ID()
             local aim_coords = GetOffsetFromCam(80)
             local target_id = GetClosestPlayerToCoords(aim_coords, 80)
@@ -31,8 +31,16 @@ local function DoOnFootAimbot(toggle)
                 local target_coords = ENTITY.GET_ENTITY_COORDS(target_ped)
 
                 --if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY_IN_FRONT(player, target_ped)) then
-                --    TASK.TASK_TURN_PED_TO_FACE_COORD(player, target_coords.x, target_coords.y, target_coords.z, 1)
-                --    TASK.TASK_AIM_GUN_AT_COORD(player, target_coords.x, target_coords.y, target_coords.z, 1, 1, 1)
+                    local cam_coords = CAM.GET_GAMEPLAY_CAM_COORD()
+                    local dX = target_coords.x - cam_coords.x
+                    local dY = target_coords.y - cam_coords.y
+                    local dZ = target_coords.z - cam_coords.z
+
+                    local pitch = MISC.ATAN2(dX, dY) / math.pi
+                    local yaw = MISC.ASIN(dZ / GetDistanceBetweenCoords(target_coords, cam_coords)) * 180 / math.pi
+                    local roll = 0.0
+                    util.draw_debug_text('Pitch: ' .. pitch .. ' Yaw: ' .. yaw)
+                    CAM._SET_GAMEPLAY_CAM_RELATIVE_ROTATION(roll, pitch, yaw)
                 --end
             end
         end

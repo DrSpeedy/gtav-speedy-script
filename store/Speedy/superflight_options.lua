@@ -5,7 +5,7 @@
 local bSuperFlightEnabled = false
 local bSuperFlightWeaponsEnabled = false
 local bSuperFlightWeapAimbotEnabled = false
-local aSpeedMults = {70, 110, 150, 200}
+local aSpeedMults = {70, 110, 160, 300}
 
 local function DoSuperFlight(toggle)
     bSuperFlightEnabled = toggle
@@ -37,8 +37,6 @@ local function DoSuperFlight(toggle)
 				end
 
 				if (parastate == 0) then
-					local vx = direction.x * aSpeedMults[1]
-					local vy = direction.y * aSpeedMults[1]
 					local vz = velocity.z + 0.275
 					local phase = 1
 
@@ -60,18 +58,18 @@ local function DoSuperFlight(toggle)
 						vz = direction.z * aSpeedMults[phase]
 					end
 
-					vx = direction.x * aSpeedMults[phase]
-					vy = direction.y * aSpeedMults[phase]
+					local vx = direction.x * aSpeedMults[phase]
+					local vy = direction.y * aSpeedMults[phase]
 
 					-- Move player up Z-axis faster while stick in down position
-					if (vz < 40 and PAD.IS_CONTROL_PRESSED(2, keys['LEFT_AN_DOWN'])) then
-						if (phase == 1) then
-							vz = vz + 1.5
+					if (velocity.z < aSpeedMults[phase] and PAD.IS_CONTROL_PRESSED(2, keys['LEFT_AN_DOWN'])) then
+						vz = velocity.z + (0.03 * aSpeedMults[phase])
+						--[[if (phase == 1) then
+							vz = velocity.z + 1.5
 						else
-							vz = vz + (0.13 * aSpeedMults[phase])
-						end
+							vz = velocity.z + (0.03 * aSpeedMults[phase])
+						end]]
 					end
-
 					-- Flight
 					ENTITY.SET_ENTITY_VELOCITY(player, vx, vy, vz)
 				end
