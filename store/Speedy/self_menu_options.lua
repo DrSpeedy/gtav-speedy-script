@@ -3,6 +3,8 @@
 
 local bSuperJumpEnabled = false
 local bOnFootAimbotEnabled = false
+local bTeleportWhereLookingEnabled = false
+local bTeleportWhereLookingEnabled2 = false
 
 local function DoSuperJump(toggle)
     bSuperJumpEnabled = toggle
@@ -74,9 +76,67 @@ local function DoTeleportUpward()
     ENTITY.SET_ENTITY_COORDS(player, x, y, z)
 end
 
+local function DoTeleportWhereLooking(toggle)
+    bTeleportWhereLookingEnabled = toggle
+    util.create_tick_handler(function()
+        if (PadSingleTapHold('LT') and PadMultiTap('R3', 1)) then
+            local player = PLAYER.PLAYER_PED_ID()
+            local cam_rot = CAM.GET_GAMEPLAY_CAM_ROT(0)
+            local target_min = GetOffsetFromCam(1)
+            local target_max = GetOffsetFromCam(10000)
+            local raytest_id = SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
+                target_min.x,
+                target_min.y,
+                target_min.z,
+                target_max.x,
+                target_max.y,
+                target_max.z,
+                -1, 0, 7)
+            local data = GetShapeTestResult(raytest_id)
+            if (data.bHit) then
+                Notification(''.. data.Entity)
+                ENTITY.SET_ENTITY_COORDS(player, data.v3Coords.x, data.v3Coords.y, data.v3Coords.z)
+                ENTITY.SET_ENTITY_ROTATION(player, cam_rot.x, cam_rot.y, cam_rot.z)
+            else
+                Notification("No hit")
+            end
+        end
+
+        return bTeleportWhereLookingEnabled
+    end)
+end
+
+local function DoTeleportWhereLooking2(toggle)
+    bTeleportWhereLookingEnabled2 = toggle
+    util.create_tick_handler(function()
+        if (PadSingleTapHold('LT') and PadMultiTap('R3', 1)) then
+            local player = PLAYER.PLAYER_PED_ID()
+            local cam_rot = CAM.GET_GAMEPLAY_CAM_ROT(0)
+
+            local distance = 500
+            local target = GetOffsetFromCam(distance)
+            local losobj = entities.create_object(1054209047, target) -- Spawn a screwdriver to test LOS... lol
+            for i=distance, 1, -1 do
+                if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(player, losobj, 17)) then
+                    ENTITY.SET_ENTITY_COORDS(player, target.x, target.y, target.z)
+                    ENTITY.SET_ENTITY_ROTATION(player, cam_rot.x, cam_rot.y, cam_rot.z, 1, true)
+                    break
+                end
+                target = GetOffsetFromCam(i)
+                ENTITY.SET_ENTITY_COORDS(losobj, target.x, target.y, target.z)
+            end
+            entities.delete_by_handle(losobj)
+        end
+
+        return bTeleportWhereLookingEnabled2
+    end)
+end
+
 local function MenuQuickTeleSetup(menu_root)
     menu.action(menu_root, 'Teleport Forward', {}, '', function() DoTeleportForward() end)
     menu.action(menu_root, 'Teleport Upward', {}, '', function() DoTeleportUpward() end)
+    menu.toggle(menu_root, 'Teleport Where Looking', {}, '', function(toggle) DoTeleportWhereLooking(toggle) end)
+    menu.toggle(menu_root, 'Teleport Where Looking 2', {}, '', function(toggle) DoTeleportWhereLooking2(toggle) end)
 end
 
 function MenuSelfSetup(menu_root)

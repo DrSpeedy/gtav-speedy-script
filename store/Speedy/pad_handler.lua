@@ -2,7 +2,7 @@
 -- https://github.com/DrSpeedy
 
 local bPadHandlerEnabled = false
-local iTickDelay = 8 -- Number of ticks allowed between button taps/switching from single press to hold
+local iTickDelay = 16 -- Number of ticks allowed between button taps/switching from single press to hold
 local PadData = {}
 
 function StartPadHandler()

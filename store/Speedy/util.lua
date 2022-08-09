@@ -62,3 +62,23 @@ function GetClosestPlayerToCoords(coords, max_distance)
     end
 	return shortest_dist_player
 end
+
+function GetShapeTestResult(shapetest_id)
+	local ptr_hit = memory.alloc(1) 		-- BOOL
+	local ptr_v3 = memory.alloc(24) 		-- Vector3
+	local ptr_v3_surface = memory.alloc(24) -- Vector3
+	local ptr_entity = memory.alloc(4) 		-- INT
+
+	local result = 1
+	while result == 1 do
+		result = SHAPETEST.GET_SHAPE_TEST_RESULT(shapetest_id, ptr_hit, ptr_v3, ptr_v3_surface, ptr_entity)
+	end
+
+	local data = {
+		bHit = memory.read_byte(ptr_hit) == 1,
+		v3Coords = memory.read_vector3(ptr_v3),
+		v3SurfaceNormal = memory.read_vector3(ptr_v3_surface),
+		Entity = memory.read_int(ptr_entity)
+	}
+	return data
+end
