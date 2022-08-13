@@ -25,14 +25,15 @@ local function DoOnFootAimbot(toggle)
     bOnFootAimbotEnabled = toggle
     util.create_tick_handler(function()
         if (PadSingleTapHold('LT')) then
+            PointGameplayCamAtCoords(v3.new(0.0, 0.0, 0.0))
             local player = PLAYER.PLAYER_PED_ID()
             local aim_coords = GetOffsetFromCam(80)
             local target_id = GetClosestPlayerToCoords(aim_coords, 80)
             if (target_id ~= -1 and target_id ~= PLAYER.PLAYER_ID()) then
                 local target_ped = PLAYER.GET_PLAYER_PED(target_id)
                 local target_coords = ENTITY.GET_ENTITY_COORDS(target_ped)
-
-                --if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY_IN_FRONT(player, target_ped)) then
+                PointGameplayCamAtCoords(v3.new(0.0, 0.0, 0.0))
+                --[[if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY_IN_FRONT(player, target_ped)) then
                     local cam_coords = CAM.GET_GAMEPLAY_CAM_COORD()
                     local dX = target_coords.x - cam_coords.x
                     local dY = target_coords.y - cam_coords.y
@@ -43,7 +44,7 @@ local function DoOnFootAimbot(toggle)
                     local roll = 0.0
                     util.draw_debug_text('Pitch: ' .. pitch .. ' Yaw: ' .. yaw)
                     CAM._SET_GAMEPLAY_CAM_RELATIVE_ROTATION(roll, pitch, yaw)
-                --end
+                --end]]
             end
         end
         return bOnFootAimbotEnabled
@@ -91,10 +92,11 @@ local function DoTeleportWhereLooking(toggle)
                 target_max.x,
                 target_max.y,
                 target_max.z,
-                -1, 0, 7)
+                -1, 0, 7
+            )
             local data = GetShapeTestResult(raytest_id)
             if (data.bHit) then
-                Notification(''.. data.Entity)
+                Notification('Entity test: '.. data.Entity)
                 ENTITY.SET_ENTITY_COORDS(player, data.v3Coords.x, data.v3Coords.y, data.v3Coords.z)
                 ENTITY.SET_ENTITY_ROTATION(player, cam_rot.x, cam_rot.y, cam_rot.z)
             else
@@ -105,28 +107,29 @@ local function DoTeleportWhereLooking(toggle)
         return bTeleportWhereLookingEnabled
     end)
 end
-
+-- Not viable
 local function DoTeleportWhereLooking2(toggle)
     bTeleportWhereLookingEnabled2 = toggle
     util.create_tick_handler(function()
-        if (PadSingleTapHold('LT') and PadMultiTap('R3', 1)) then
+        --if (PadSingleTapHold('LT') and PadMultiTap('R3', 1)) then
             local player = PLAYER.PLAYER_PED_ID()
             local cam_rot = CAM.GET_GAMEPLAY_CAM_ROT(0)
 
-            local distance = 500
+            local distance = 2000
             local target = GetOffsetFromCam(distance)
             local losobj = entities.create_object(1054209047, target) -- Spawn a screwdriver to test LOS... lol
             for i=distance, 1, -1 do
                 if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(player, losobj, 17)) then
-                    ENTITY.SET_ENTITY_COORDS(player, target.x, target.y, target.z)
-                    ENTITY.SET_ENTITY_ROTATION(player, cam_rot.x, cam_rot.y, cam_rot.z, 1, true)
+                    util.draw_ar_beacon(target)
+                    --ENTITY.SET_ENTITY_COORDS(player, target.x, target.y, target.z)
+                    --ENTITY.SET_ENTITY_ROTATION(player, cam_rot.x, cam_rot.y, cam_rot.z, 1, true)
                     break
                 end
                 target = GetOffsetFromCam(i)
                 ENTITY.SET_ENTITY_COORDS(losobj, target.x, target.y, target.z)
             end
             entities.delete_by_handle(losobj)
-        end
+        --end
 
         return bTeleportWhereLookingEnabled2
     end)

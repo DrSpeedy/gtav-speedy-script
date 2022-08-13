@@ -3,6 +3,12 @@
         "menuIdTbl",
         "keys",
         "TOAST_ABOVE_MAP",
-        "native_invoker"
+        "native_invoker",
+        "wait",
+        "pluto_continue",
+        "continue"
+    ],
+    "Lua.diagnostics.disable": [
+        "param-type-mismatch"
     ]
 }
