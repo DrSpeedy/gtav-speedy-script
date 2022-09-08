@@ -2,10 +2,6 @@
 -- https://github.com/DrSpeedy
 
 local bSuperJumpEnabled = false
-local bOnFootAimbotEnabled = false
-local bTeleportWhereLookingEnabled = false
-local bTeleportWhereLookingEnabled2 = false
-
 local function DoSuperJump(toggle)
     bSuperJumpEnabled = toggle
     util.create_tick_handler(function()
@@ -14,40 +10,10 @@ local function DoSuperJump(toggle)
         local velocity = ENTITY.GET_ENTITY_VELOCITY(player)
         local direction = ENTITY.GET_ENTITY_FORWARD_VECTOR(player)
 
-        if(jumping and PadMultiTapHold('X', 1)) then
-            ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z + 3)
+        if(CheckInput('[t]X:[h]VK(48)') and jumping) then
+            ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z + 15)
         end
         return bSuperJumpEnabled
-    end)
-end
-
-local function DoOnFootAimbot(toggle)
-    bOnFootAimbotEnabled = toggle
-    util.create_tick_handler(function()
-        if (PadSingleTapHold('LT')) then
-            PointGameplayCamAtCoords(v3.new(0.0, 0.0, 0.0))
-            local player = PLAYER.PLAYER_PED_ID()
-            local aim_coords = GetOffsetFromCam(80)
-            local target_id = GetClosestPlayerToCoords(aim_coords, 80)
-            if (target_id ~= -1 and target_id ~= PLAYER.PLAYER_ID()) then
-                local target_ped = PLAYER.GET_PLAYER_PED(target_id)
-                local target_coords = ENTITY.GET_ENTITY_COORDS(target_ped)
-                PointGameplayCamAtCoords(v3.new(0.0, 0.0, 0.0))
-                --[[if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY_IN_FRONT(player, target_ped)) then
-                    local cam_coords = CAM.GET_GAMEPLAY_CAM_COORD()
-                    local dX = target_coords.x - cam_coords.x
-                    local dY = target_coords.y - cam_coords.y
-                    local dZ = target_coords.z - cam_coords.z
-
-                    local pitch = MISC.ATAN2(dX, dY) / math.pi
-                    local yaw = MISC.ASIN(dZ / GetDistanceBetweenCoords(target_coords, cam_coords)) * 180 / math.pi
-                    local roll = 0.0
-                    util.draw_debug_text('Pitch: ' .. pitch .. ' Yaw: ' .. yaw)
-                    CAM._SET_GAMEPLAY_CAM_RELATIVE_ROTATION(roll, pitch, yaw)
-                --end]]
-            end
-        end
-        return bOnFootAimbotEnabled
     end)
 end
 
@@ -77,69 +43,59 @@ local function DoTeleportUpward()
     ENTITY.SET_ENTITY_COORDS(player, x, y, z)
 end
 
-local function DoTeleportWhereLooking(toggle)
-    bTeleportWhereLookingEnabled = toggle
-    util.create_tick_handler(function()
-        if (PadSingleTapHold('LT') and PadMultiTap('R3', 1)) then
-            local player = PLAYER.PLAYER_PED_ID()
-            local cam_rot = CAM.GET_GAMEPLAY_CAM_ROT(0)
-            local target_min = GetOffsetFromCam(1)
-            local target_max = GetOffsetFromCam(10000)
-            local raytest_id = SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
-                target_min.x,
-                target_min.y,
-                target_min.z,
-                target_max.x,
-                target_max.y,
-                target_max.z,
-                -1, 0, 7
-            )
-            local data = GetShapeTestResult(raytest_id)
-            if (data.bHit) then
-                Notification('Entity test: '.. data.Entity)
-                ENTITY.SET_ENTITY_COORDS(player, data.v3Coords.x, data.v3Coords.y, data.v3Coords.z)
-                ENTITY.SET_ENTITY_ROTATION(player, cam_rot.x, cam_rot.y, cam_rot.z)
-            else
-                Notification("No hit")
-            end
-        end
-
-        return bTeleportWhereLookingEnabled
-    end)
-end
--- Not viable
-local function DoTeleportWhereLooking2(toggle)
-    bTeleportWhereLookingEnabled2 = toggle
-    util.create_tick_handler(function()
-        --if (PadSingleTapHold('LT') and PadMultiTap('R3', 1)) then
-            local player = PLAYER.PLAYER_PED_ID()
-            local cam_rot = CAM.GET_GAMEPLAY_CAM_ROT(0)
-
-            local distance = 2000
-            local target = GetOffsetFromCam(distance)
-            local losobj = entities.create_object(1054209047, target) -- Spawn a screwdriver to test LOS... lol
-            for i=distance, 1, -1 do
-                if (ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(player, losobj, 17)) then
-                    util.draw_ar_beacon(target)
-                    --ENTITY.SET_ENTITY_COORDS(player, target.x, target.y, target.z)
-                    --ENTITY.SET_ENTITY_ROTATION(player, cam_rot.x, cam_rot.y, cam_rot.z, 1, true)
-                    break
-                end
-                target = GetOffsetFromCam(i)
-                ENTITY.SET_ENTITY_COORDS(losobj, target.x, target.y, target.z)
-            end
-            entities.delete_by_handle(losobj)
-        --end
-
-        return bTeleportWhereLookingEnabled2
-    end)
-end
-
 local function MenuQuickTeleSetup(menu_root)
+    menu.action(menu_root, 'Agency Gun Shop', {}, '', function ()
+        TeleportPed(players.user_ped(), v3.new(380.32, -51.35, 111.96), v3.new(-0.38, -0.92, 0.0), false)
+    end)
+    menu.divider(menu_root, '====================')
     menu.action(menu_root, 'Teleport Forward', {}, '', function() DoTeleportForward() end)
     menu.action(menu_root, 'Teleport Upward', {}, '', function() DoTeleportUpward() end)
-    menu.toggle(menu_root, 'Teleport Where Looking', {}, '', function(toggle) DoTeleportWhereLooking(toggle) end)
-    menu.toggle(menu_root, 'Teleport Where Looking 2', {}, '', function(toggle) DoTeleportWhereLooking2(toggle) end)
+    menu.action(menu_root, 'Copy TP to Clipboard', {}, '', function()
+        local pos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        local rot = ENTITY.GET_ENTITY_ROTATION(players.user_ped(), 0)
+        local str = 'TeleportPed(players.user_ped(), v3.new('..pos.x..','..pos.y..','..pos.z..'), v3.new('..rot.x..','..rot.y..','..rot.z..'), true)'
+        util.copy_to_clipboard(str, true)
+    end)
+end
+
+local bRegenHealthEnabled = false
+local function DoRegenHealth(toggle)
+    bRegenHealthEnabled = toggle
+    local delay = 25 -- Delay in ticks
+    local step = 10 -- % of max health/armor to add to current value
+    local tick = 0
+
+    util.create_tick_handler(function()
+        if (tick > delay) then
+            local player = players.user_ped()
+            tick = 0
+
+            local max_health = ENTITY.GET_ENTITY_MAX_HEALTH(player)
+            local max_armor = 50
+            local current_health = ENTITY.GET_ENTITY_HEALTH(player)
+            local current_armor = PED.GET_PED_ARMOUR(player)
+            local health_modifier = math.floor((max_health / 100) * step)
+            local armor_modifier = math.floor((max_armor / 100) * step)
+            if (current_health < max_health) then
+                if ((current_health + health_modifier) > max_health) then
+                    current_health = current_health + (max_health - current_health)
+                else
+                    current_health = current_health + health_modifier
+                end
+                ENTITY.SET_ENTITY_HEALTH(player, current_health)
+            elseif (current_armor < max_armor) then
+                if ((current_armor + armor_modifier) > max_armor) then
+                    current_armor = current_armor + (max_armor - current_armor)
+                else
+                    current_armor = current_armor + armor_modifier
+                end
+                PED.SET_PED_ARMOUR(player, current_armor)
+            end
+        else
+            tick = tick + 1
+        end
+        return bRegenHealthEnabled
+    end)
 end
 
 function MenuSelfSetup(menu_root)
@@ -147,8 +103,10 @@ function MenuSelfSetup(menu_root)
     menuIdTbl['Self.Super Run'] = menu.list(menu_root, 'Super Run', {}, '')
     menuIdTbl['Self.Super Flight'] = menu.list(menu_root, 'Super Flight', {}, '')
     menuIdTbl['Self.Quick Teleport'] = menu.list(menu_root, 'Quick Teleport', {}, '')
-    menu.toggle(menu_root, 'Aimbot', {}, '', function(toggle) DoOnFootAimbot(toggle) end)
+    menuIdTbl['Self.Aimbot'] = menu.list(menu_root, 'Aimbot', {}, '')
+    menu.toggle(menu_root, 'Regenerate Health', {}, '', function(toggle) DoRegenHealth(toggle) end)
     menu.toggle(menu_root, 'Super Jump', {}, '', function(toggle) DoSuperJump(toggle) end)
 
+    MenuSetupSelfAimbot(menuIdTbl['Self.Aimbot'])
     MenuQuickTeleSetup(menuIdTbl['Self.Quick Teleport'])
 end

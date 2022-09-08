@@ -8,24 +8,6 @@ function Notification(message)
 	util.toast(message, TOAST_ABOVE_MAP)
 end
 
-function PointGameplayCamAtCoords(target_coords)
-	local cam_pos = CAM.GET_GAMEPLAY_CAM_COORD()
-
-	local dX = cam_pos.x - target_coords.x
-	local dY = cam_pos.y - target_coords.y
-	local dZ = cam_pos.z - target_coords.z
-	local cam_rot = CAM.GET_GAMEPLAY_CAM_ROT(0)
-	util.draw_debug_text('' .. cam_rot.x * (math.pi / 180) .. ' ' .. cam_rot.y * (math.pi / 180) .. ' ' .. cam_rot.z * (math.pi / 180))
-	local t = v3.toRot(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID()))
-	util.draw_debug_text('' .. t.x .. ' ' .. t.y .. ' ' .. t.z)
-	local target_heading = MISC.ATAN2(dY, dX) * (math.pi / 180) - (90 * math.pi/180)
-	local target_pitch = -(MISC.ATAN2(dZ, math.sqrt(dX^2 + dY^2)) * (math.pi / 180))
-	local target_roll = 0.0
-	util.draw_debug_text('Pitch: ' .. target_pitch .. ' Yaw: ' .. target_heading)
-	--CAM._SET_GAMEPLAY_CAM_RELATIVE_ROTATION(target_roll, target_pitch, target_heading)
-
-end
-
 -- Script(RAGE) global memory wrappers
 function ReadGlobalByte(global)
 	local address = memory.script_global(global)
@@ -112,7 +94,7 @@ function GetClosestPlayerToCoords(coords, max_distance, ignore_self)
 	return shortest_dist_player
 end
 
-function GetClosestPedToCoords(coords, radius, include_peds, include_self, include_friends, include_players)
+function GetClosestPedToCoords(coords, radius, use_fov, include_peds, include_self, include_friends, include_players)
 	local ped_list = entities.get_all_peds_as_handles()
 	local shortest_distance = 10000000
 	local shortest_dist_ped = -1
@@ -142,6 +124,9 @@ function GetClosestPedToCoords(coords, radius, include_peds, include_self, inclu
 			if (not player_on_list) then
 				continue
 			end
+		end
+		if (use_fov and not PED.IS_PED_FACING_PED(players.user_ped(), ped, 45)) then
+			continue
 		end
 		if (ped == players.user_ped() and not include_self) then
 			continue
@@ -201,23 +186,17 @@ function GetShapeTestResult(shapetest_id)
 end
 
 function ShootPedInHead(ped, weapon_hash, damage)
-	local hash = util.joaat(weapon_hash)
-	-- Wait while assets load
-	if not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) then
-		WEAPON.REQUEST_WEAPON_ASSET(hash, 31, 26)
-		while not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) do
-			util.yield()
-		end
-	end
-
-	local t1 = PED.GET_PED_BONE_COORDS(ped, 31086, 0.01, 0, 0)
-	local t2 = PED.GET_PED_BONE_COORDS(ped, 31086, -0.01, 0, 0)
+	local t1 = PED.GET_PED_BONE_COORDS(ped, 31086, 0, -0.1, 0)
+	local t2 = PED.GET_PED_BONE_COORDS(ped, 31086, 0, 0.1, 0)
 	local pveh = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), false)
-	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(t1.x, t1.y, t1.z, t2.x, t2.y, t2.z, damage, true, hash, players.user_ped(), true, true, 10000, pveh)
+	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(t1.x, t1.y, t1.z, t2.x, t2.y, t2.z, damage, true, weapon_hash, players.user_ped(), false, true, 10000, pveh)
 end
 
 function TeleportPed(ped, coords, rotation, with_vehicle)
+	local keep_velocity = true
 	local entity = 0
+	local speed = 0
+	local vel = v3.new()
 
 	if (with_vehicle and PED.IS_PED_IN_ANY_VEHICLE(ped, true)) then
 		entity = PED.GET_VEHICLE_PED_IS_IN(ped, false)
@@ -227,12 +206,39 @@ function TeleportPed(ped, coords, rotation, with_vehicle)
 		entity = ped
 	end
 
-	ENTITY.SET_ENTITY_COORDS(entity, coords)
+	if (keep_velocity) then
+		if (ENTITY.IS_ENTITY_A_VEHICLE(entity)) then
+			speed = ENTITY.GET_ENTITY_SPEED(entity)
+		else
+			vel = ENTITY.GET_ENTITY_VELOCITY(entity)
+		end
+	end
+
+	ENTITY.SET_ENTITY_COORDS(entity, coords.x, coords.y, coords.z)
 	if (rotation ~= nil) then
 		ENTITY.SET_ENTITY_ROTATION(entity, rotation.x, rotation.y, rotation.z, 0, true)
+	end
+
+	if (keep_velocity) then
+		if (ENTITY.IS_ENTITY_A_VEHICLE(entity)) then
+			VEHICLE.SET_VEHICLE_FORWARD_SPEED(entity, speed)
+		else
+			local boost = ENTITY.GET_ENTITY_FORWARD_VECTOR(entity)
+			boost:mul(10)
+			ENTITY.SET_ENTITY_VELOCITY(entity, vel.x + boost.x, vel.y + boost.y, vel.z + boost.z)
+		end
 	end
 end
 
 function DrawDebugLine(pos1, pos2, rgba)
 	GRAPHICS.DRAW_LINE(pos1.x, pos1.y, pos1.z, pos2.x, pos2.y, pos2.z, rgba.r, rgba.g, rgba.b, rgba.a)
+end
+
+function RequestControlOfNetworkEntity(entity)
+	if (not NETWORK.NETWORK_IS_IN_SESSION()) then
+		return true
+	end
+	local id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
+	NETWORK.SET_NETWORK_ID_CAN_MIGRATE(id, true)
+	return NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
 end
