@@ -10,7 +10,7 @@ local function DoSuperJump(toggle)
         local velocity = ENTITY.GET_ENTITY_VELOCITY(player)
         local direction = ENTITY.GET_ENTITY_FORWARD_VECTOR(player)
 
-        if(CheckInput('[t]X:[h]VK(48)') and jumping) then
+        if(CheckInput('[t]X:[d]VK(48)') and jumping) then
             ENTITY.SET_ENTITY_VELOCITY(player, velocity.x+(direction.x*1.1), velocity.y+(direction.y*1.1), velocity.z + 15)
         end
         return bSuperJumpEnabled

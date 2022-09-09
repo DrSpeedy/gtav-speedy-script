@@ -27,7 +27,7 @@ local function DoSuperRun(toggle)
         local parastate = PED.GET_PED_PARACHUTE_STATE(player)
         local grounddistance = ENTITY.GET_ENTITY_HEIGHT_ABOVE_GROUND(player)
 
-        if (PAD.IS_CONTROL_PRESSED(2, keys['RB']) and sprinting and not (parastate == 0)) then
+        if (CheckInput('[D]RB') and sprinting and not (parastate == 0)) then
             if not (PED.IS_PED_IN_ANY_VEHICLE(player, true) or falling or ragdoll) then
                 is_super_running = true
 

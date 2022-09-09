@@ -40,7 +40,8 @@ function StartPadHandler()
 		iTicksSinceLastPress = 0,
 		bIsLongHold = false,
 		iTapCounter = 0,
-		bIsSinglePress = false
+		bIsSinglePress = false,
+		bJustReleased = false
 	}
 
 	for key, key_code in pairs(KEYS) do
@@ -77,7 +78,8 @@ function StartPadHandler()
 					iTicksSinceLastPress = 0,
 					bIsLongHold = longhold,
 					iTapCounter = tapcounter,
-					bIsSinglePress = false
+					bIsSinglePress = false,
+					bJustReleased = false
 				}
 			end
 
@@ -91,6 +93,11 @@ function StartPadHandler()
 				if (pressed and curtick < iTickDelay) then
 					singlepress = true
 				end
+				
+				local justreleased = false
+				if (pressed) then
+					justreleased = true
+				end
 
 				PadData[key] = {
 					bIsPressed = false,
@@ -98,7 +105,8 @@ function StartPadHandler()
 					iTicksSinceLastPress = lasttick + 1,
 					bIsLongHold = false,
 					iTapCounter = tapcounter,
-					bIsSinglePress = singlepress
+					bIsSinglePress = singlepress,
+					bJustReleased = justreleased
 				}
 			end
 		end
@@ -106,6 +114,7 @@ function StartPadHandler()
 	end)
 end
 
+-- Legacy helper functions
 function PadMultiTapHold(key_index, taps)
 	local data = PadData[key_index]
 	return data.iTapCounter == taps and data.bIsLongHold
@@ -125,6 +134,8 @@ function PadSingleTap(key_index)
 	local data = PadData[key_index]
 	return data.bIsSinglePress
 end
+
+--
 
 function StopPadHandler()
 	bPadHandlerEnabled = false
@@ -149,15 +160,28 @@ function ParseCmdString(cmd_str)
         local args = string.match(cmds[i], '%[(.-)%]')
         local opcode = string.match(args, '(%a+)')
         local opargs = string.match(args, '(%d+)')
+		
         data[i] = {
             KEY = key,
             OP = opcode,
-            ARG = opargs ~= nil and opargs or 1
+            ARG = opargs ~= nil and tonumber(opargs) or 1
         }
     end
     return data
 end
 
+--[[
+	T: Tap
+	H: Held Down (Delayed)
+	D: Down
+	U: Up
+	R: Just Released
+	
+	Example:
+	CheckInput('[D]VK(48):[T2]RB')
+	True when VK48 - Zero is held down and RB is tapped twice
+	on the controller
+]]
 function CheckInput(cmd_str)
     local input = ParseCmdString(cmd_str)
     local results = {}
@@ -169,11 +193,23 @@ function CheckInput(cmd_str)
         }
         local op = data['OP']
         if (op == 'T') then
-            results[i] = data.ARG > 1 and PadMultiTap(data.KEY, data.ARG) or PadSingleTap(data.KEY)
+			if (data.ARG > 1) then
+				results[i] = PadMultiTap(data.KEY, data.ARG - 1)
+			else
+				results[i] = PadSingleTap(data.KEY)
+			end
         elseif (op == 'H') then
-            results[i] = data.ARG > 1 and PadMultiTapHold(data.KEY, data.ARG) or PadSingleTapHold(data.KEY)
+			if (data.ARG > 1) then
+				results[i] = PadMultiTapHold(data.KEY, data.ARG - 1)
+			else
+				results[i] = PadSingleTapHold(data.KEY)
+			end
         elseif (op == 'D') then
 			results[i] = PadData[data.KEY].bIsPressed
+		elseif (op == 'U') then
+			results[i] = not (PadData[data.KEY].bIsPressed)
+		elseif (op == 'R') then
+			results[i] = PadData[data.KEY].bJustReleased
         end
 
     end

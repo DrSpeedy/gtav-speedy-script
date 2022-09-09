@@ -98,7 +98,7 @@ local function DoAdminMode(toggle)
             if (target_data.bHit) then
                 local distance = player_coords:distance(target_data.v3Coords)
 
-                if (PadMultiTap('RB', 1)) then
+                if (CheckInput('[t2]RB')) then
                     TeleportPed(player, target_data.v3Coords, nil, true)
                 end
 
@@ -108,7 +108,7 @@ local function DoAdminMode(toggle)
                         
                         -- PED Only Options
                         if (ENTITY.IS_ENTITY_A_PED(target_entity)) then
-                            if (PadSingleTap('RT')) then
+                            if (CheckInput('[t]RT')) then
                                 local hash = util.joaat('VEHICLE_WEAPON_DOGFIGHTER_MG')
 
                                 -- Wait while assets load
@@ -123,7 +123,7 @@ local function DoAdminMode(toggle)
                         end
                         
                         -- Pick up the entity
-                        if (PadSingleTapHold('LT')) then
+                        if (CheckInput('[H]LT')) then
                             
                             local movement_pos_ofst = v3.new(CAM.GET_GAMEPLAY_CAM_ROT(0):toDir())
                             movement_pos_ofst:mul(distance)
@@ -139,7 +139,7 @@ local function DoAdminMode(toggle)
                                 if (vel_magnitude < 10) then vel_magnitude = 10 end
                                 movement_vel:mul(vel_magnitude)
                                 ENTITY.SET_ENTITY_VELOCITY(target_entity, movement_vel.x, movement_vel.y, movement_vel.z)
-                                if (PadSingleTap('RT')) then
+                                if (CheckInput('[T]RT')) then
                                     local speed_ofst = GetOffsetFromCam(1000)
                                     movement_vel.x = speed_ofst.x - target_data.v3Coords.x
                                     movement_vel.y = speed_ofst.y - target_data.v3Coords.y
@@ -147,7 +147,7 @@ local function DoAdminMode(toggle)
 
                                     ENTITY.SET_ENTITY_VELOCITY(target_entity, movement_vel.x, movement_vel.y, movement_vel.z)
                                     reset_target = true
-                                elseif (PadSingleTapHold('DPAD_DOWN')) then
+                                elseif (CheckInput('[H]DPAD_DOWN')) then
                                     movement_vel = v3.new(player_coords)
                                     movement_vel:sub(target_data.v3Coords)
                                     movement_vel:normalise()
@@ -157,7 +157,7 @@ local function DoAdminMode(toggle)
                                     movement_vel:mul(vel_magnitude)
 
                                     ENTITY.SET_ENTITY_VELOCITY(target_entity, movement_vel.x, movement_vel.y, movement_vel.z)
-                                elseif (PadSingleTapHold('DPAD_UP')) then
+                                elseif (CheckInput('[H]DPAD_UP')) then
                                     movement_vel = v3.new(target_data.v3Coords)
                                     movement_vel:sub(player_coords)
                                     movement_vel:normalise()
@@ -166,7 +166,7 @@ local function DoAdminMode(toggle)
                                     movement_vel:mul(vel_magnitude)
 
                                     ENTITY.SET_ENTITY_VELOCITY(target_entity, movement_vel.x, movement_vel.y, movement_vel.z)
-                                elseif (PadMultiTap('DPAD_RIGHT', 1)) then
+                                elseif (CheckInput('[T2]DPAD_RIGHT')) then
                                     Notification('Deleting vehicle')
                                     RequestControlOfNetworkEntity(target_entity)
                                     entities.delete_by_handle(target_entity)
