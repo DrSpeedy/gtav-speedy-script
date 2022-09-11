@@ -96,22 +96,6 @@ local function DoDrawESP(toggle)
     end)
 end
 
-local bBigMapMode = false
-local function DoBigMapMode(toggle)
-    bBigMapMode = toggle
-
-    util.create_tick_handler(function()
-        local player_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-        local interior = INTERIOR.GET_INTERIOR_AT_COORDS(player_coords.x, player_coords.y, player_coords.z)
-        if (INTERIOR.IS_VALID_INTERIOR(interior)) then
-            HUD.SET_RADAR_ZOOM_PRECISE(83)
-        else
-            HUD.SET_RADAR_ZOOM_PRECISE(99)
-        end
-        return bBigMapMode
-    end)
-end
-
 local bAimbotDebug = false
 local function DoAimbotDebug(toggle)
     bAimbotDebug = toggle
@@ -131,5 +115,4 @@ function MenuDebugOptionsSetup(menu_root)
     menu.toggle(menu_root, 'Draw Crosshair', {}, '', function(toggle) DoDrawCrosshair(toggle) end)
     menu.toggle(menu_root, 'Draw ESP', {}, '', function(toggle) DoDrawESP(toggle) end)
     menu.toggle(menu_root, 'Draw Ped Head Debug', {}, '', function(toggle) DoAimbotDebug(toggle) end)
-    menu.toggle(menu_root, 'Big Map Mode', {}, '', function(toggle) DoBigMapMode(toggle) end)
 end

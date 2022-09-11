@@ -33,6 +33,7 @@ VK = {
 require 'lib/Speedy/Keys'
 require 'store/Speedy/util'
 require 'store/Speedy/pad_handler'
+require 'store/Speedy/cheat_codes'
 -- Self
 require 'store/Speedy/superrun_options'
 require 'store/Speedy/superflight_options'
@@ -60,6 +61,7 @@ local function DoAdminMode(toggle)
     local target_data = {}
     local reset_target = false
     util.create_tick_handler(function()
+
         if (reset_target) then
             prev_target = target_entity
             target_entity = -1
@@ -68,11 +70,7 @@ local function DoAdminMode(toggle)
         end
 
         if (CheckInput('[D]VK(48)')) then
-            PAD.DISABLE_CONTROL_ACTION(2, 37, true) -- LB - weapon select
-            PAD.DISABLE_CONTROL_ACTION(2, 19, true) -- DPAD_DOWN - Character wheel
-            PAD.DISABLE_CONTROL_ACTION(2, 27, true) -- DPAD_UP - Open phone
-            PAD.DISABLE_CONTROL_ACTION(2, 24, true) -- RT
-            PAD.DISABLE_CONTROL_ACTION(2, 25, true) -- LT
+            DisableAllControlsThisTick({'RIGHT_STICK', 'LEFT_STICK', 'X'})
             local cam_pos = CAM.GET_GAMEPLAY_CAM_COORD()
             local ofst_pos = GetOffsetFromCam(max_distance)
             local player = players.user_ped()
@@ -98,6 +96,7 @@ local function DoAdminMode(toggle)
             if (target_data.bHit) then
                 local distance = player_coords:distance(target_data.v3Coords)
 
+                -- Teleport where looking
                 if (CheckInput('[t2]RB')) then
                     TeleportPed(player, target_data.v3Coords, nil, true)
                 end
@@ -109,22 +108,57 @@ local function DoAdminMode(toggle)
                         -- PED Only Options
                         if (ENTITY.IS_ENTITY_A_PED(target_entity)) then
                             if (CheckInput('[t]RT')) then
-                                local hash = util.joaat('VEHICLE_WEAPON_DOGFIGHTER_MG')
-
-                                -- Wait while assets load
-                                if not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) then
-                                    WEAPON.REQUEST_WEAPON_ASSET(hash, 31, 26)
-                                    while not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) do
-                                        wait()
-                                    end
-                                end
+                                local hash = LoadWeaponAsset('VEHICLE_WEAPON_DOGFIGHTER_MG')
                                 ShootPedInHead(target_entity, hash, 500)
+                            elseif (CheckInput('[T]DPAD_UP')) then
+                                local hash = LoadWeaponAsset('WEAPON_RPG')
+                                ShootPedInHead(target_entity, hash, WEAPON.GET_WEAPON_DAMAGE(hash))
+                            elseif (CheckInput('[T]DPAD_RIGHT')) then
+                                local hash = LoadWeaponAsset('WEAPON_STUNGUN_MP')
+                                ShootPedInHead(target_entity, hash, WEAPON.GET_WEAPON_DAMAGE(hash))
+                            elseif (CheckInput('[t]DPAD_LEFT')) then
+                                local hash = LoadWeaponAsset('WEAPON_MOLOTOV')
+                                ShootPedInHead(target_entity, hash, WEAPON.GET_WEAPON_DAMAGE(hash))
                             end
                         end
                         
+                        -- Vehicle only
+                        if (ENTITY.IS_ENTITY_A_VEHICLE(target_entity)) then
+                            -- Drop a molotov on all vehicle ocupants
+                            if (CheckInput('[t]DPAD_LEFT')) then
+                                local hash = LoadWeaponAsset('WEAPON_MOLOTOV')
+                                for i = -1, 10 do
+                                    local p = VEHICLE.GET_PED_IN_VEHICLE_SEAT(target_entity, i, true)
+                                    if (ENTITY.IS_ENTITY_A_PED(p)) then
+                                        ShootPedInHead(p, hash, 50)
+                                    end
+                                end
+                            -- Delete vehicle
+                            elseif (CheckInput('[T2]DPAD_RIGHT')) then
+                                Notification('Attempting to delete vehicle')
+                                RequestControlOfNetworkEntity(target_entity)
+                                entities.delete_by_handle(target_entity)
+                            -- Disable vehicle
+                            elseif (CheckInput('[T2]DPAD_DOWN')) then
+                                Notification('Attempting to disable vehicle')
+                                RequestControlOfNetworkEntity(target_entity)
+                                VEHICLE.SET_VEHICLE_ENGINE_ON(target_entity, false, true, true)
+                                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(target_entity, 0)
+                            -- Explode vehicle
+                            elseif (CheckInput('[T]DPAD_UP')) then
+                                Notification('Exploding vehicle')
+                                local hash = LoadWeaponAsset('WEAPON_RPG')
+                                ShootAtEntity(target_entity, hash, WEAPON.GET_WEAPON_DAMAGE(hash))
+                            -- Warp into first available vehicle seat
+                            elseif (CheckInput('[T]Y')) then
+                                Notification('Attempting to warp into vehicle')
+                                RequestControlOfNetworkEntity(target_entity)
+                                PED.SET_PED_INTO_VEHICLE(players.user_ped(), target_entity, -2)
+                            end
+                        end
+
                         -- Pick up the entity
                         if (CheckInput('[H]LT')) then
-                            
                             local movement_pos_ofst = v3.new(CAM.GET_GAMEPLAY_CAM_ROT(0):toDir())
                             movement_pos_ofst:mul(distance)
                             movement_pos_ofst:add(player_coords)
@@ -166,10 +200,6 @@ local function DoAdminMode(toggle)
                                     movement_vel:mul(vel_magnitude)
 
                                     ENTITY.SET_ENTITY_VELOCITY(target_entity, movement_vel.x, movement_vel.y, movement_vel.z)
-                                elseif (CheckInput('[T2]DPAD_RIGHT')) then
-                                    Notification('Deleting vehicle')
-                                    RequestControlOfNetworkEntity(target_entity)
-                                    entities.delete_by_handle(target_entity)
                                 end
                             end
                         end
@@ -185,9 +215,10 @@ end
 
 local function Init()
     StartPadHandler()
+    StartCheatHandler()
     -- Main Menu
     MenuWeaponLoadoutSetup(menu.my_root())
-    menu.toggle(menu.my_root(), 'God Finger Test', {}, '', function (toggle)
+    menu.toggle(menu.my_root(), 'Admin Mode', {}, '', function (toggle)
         DoAdminMode(toggle)
     end)
 
@@ -200,7 +231,6 @@ local function Init()
     MenuSuperFlightSetup(menuIdTbl['Self.Super Flight'])
 
     MenuDebugOptionsSetup(menuIdTbl['Debug'])
-    HUD.SET_BIGMAP_ACTIVE(true, false)
 end
 
 Init()

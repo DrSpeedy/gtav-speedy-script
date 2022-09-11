@@ -44,8 +44,11 @@ local function DoTeleportUpward()
 end
 
 local function MenuQuickTeleSetup(menu_root)
-    menu.action(menu_root, 'Agency Gun Shop', {}, '', function ()
+    menu.action(menu_root, 'Cayo Vault', {}, '', function ()
         TeleportPed(players.user_ped(), v3.new(380.32, -51.35, 111.96), v3.new(-0.38, -0.92, 0.0), false)
+    end)
+    menu.action(menu_root, 'Cayo Compound Exit', {}, '', function ()
+        TeleportPed(players.user_ped(), v3.new(4990.54,-5719.12,19.88), v3.new(0,-4,47), true)
     end)
     menu.divider(menu_root, '====================')
     menu.action(menu_root, 'Teleport Forward', {}, '', function() DoTeleportForward() end)

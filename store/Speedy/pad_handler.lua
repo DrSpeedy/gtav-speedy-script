@@ -5,6 +5,9 @@ local bPadHandlerEnabled = false
 local iTickDelay = 16 -- Number of ticks allowed between button taps/switching from single press to hold
 local iPadIdx = 2
 local PadData = {}
+local SeqBuffer = {}
+local SeqBufferSize = 20
+local bSeqIgnoreAnalogSticks = true
 
 local function GetKeyStatus(key)
     local vkey_arg = string.match(key, 'VK%((.-)%)')
@@ -109,6 +112,16 @@ function StartPadHandler()
 					bJustReleased = justreleased
 				}
 			end
+			-- Seq logic
+			if (PadData[key].bIsSinglePress) then
+				if (bSeqIgnoreAnalogSticks and (key == 'LEFT_STICK' or key == 'RIGHT STICK')) then
+					continue
+				end
+				SeqBuffer[#SeqBuffer+1] = key
+				if (#SeqBuffer > SeqBufferSize) then
+					table.remove(SeqBuffer, 1)
+				end
+			end
 		end
 		return bPadHandlerEnabled
 	end)
@@ -144,7 +157,7 @@ end
 
 -- New Hotness
 
-function SplitString(source, delimiters)
+local function SplitString(source, delimiters)
     local elements = {}
     local pattern = '([^'..delimiters..']+)'
 ---@diagnostic disable-next-line: discard-returns
@@ -152,7 +165,7 @@ function SplitString(source, delimiters)
     return elements
 end
 
-function ParseCmdString(cmd_str)
+local function ParseCmdString(cmd_str)
     local cmds = SplitString(cmd_str:upper(), ':')
     local data = {}
     for i = 1, #cmds do
@@ -160,7 +173,7 @@ function ParseCmdString(cmd_str)
         local args = string.match(cmds[i], '%[(.-)%]')
         local opcode = string.match(args, '(%a+)')
         local opargs = string.match(args, '(%d+)')
-		
+
         data[i] = {
             KEY = key,
             OP = opcode,
@@ -176,11 +189,21 @@ end
 	D: Down
 	U: Up
 	R: Just Released
+	F: Function
+
+	T, H Both can take a numeric argument with the following
+	syntax: [T2], [H4]; If no arugment is supplied, the arg will
+	default to 1. This argument is the number of taps needed to meet
+	the input condition
 	
 	Example:
 	CheckInput('[D]VK(48):[T2]RB')
 	True when VK48 - Zero is held down and RB is tapped twice
 	on the controller
+
+	CheckInput('[D]VK(48):[F]SEQ(RB,LB,X)')
+	True when VK48 - Zero is held down and RB, LB, X are pressed
+	in sequence on the controller
 ]]
 function CheckInput(cmd_str)
     local input = ParseCmdString(cmd_str)
@@ -210,6 +233,21 @@ function CheckInput(cmd_str)
 			results[i] = not (PadData[data.KEY].bIsPressed)
 		elseif (op == 'R') then
 			results[i] = PadData[data.KEY].bJustReleased
+		elseif (op == 'F') then
+			if (func_tbl['SEQ'] ~= nil) then
+				local seq_str = ''
+				for j = 1, #SeqBuffer do
+					seq_str = seq_str .. ',' .. SeqBuffer[j]
+				end
+				if (string.match(seq_str, func_tbl['SEQ']) == func_tbl['SEQ']) then
+					results[i] = true
+					SeqBuffer = {}
+				else
+					results[i] = false
+				end
+			else
+				results[i] = false
+			end
         end
 
     end
@@ -219,4 +257,25 @@ function CheckInput(cmd_str)
         end
     end
     return true
+end
+
+function DisableControlThisTick(ctrl_key)
+	local ctrl_data = KEYS[ctrl_key]
+	for i = 1, #ctrl_data do
+		PAD.DISABLE_CONTROL_ACTION(iPadIdx, ctrl_data[i].id, true)
+	end
+end
+
+function DisableAllControlsThisTick(whitelist_tbl)
+	for k, v in pairs(KEYS) do
+		local skip_ctrl = false
+		for i = 1, #whitelist_tbl do
+			if (k == whitelist_tbl[i]) then
+				skip_ctrl = true
+			end
+		end
+		if (not skip_ctrl) then
+			DisableControlThisTick(k)
+		end
+	end
 end

@@ -75,6 +75,7 @@ function GetDistanceBetweenCoords(vector1, vector2)
 	return math.sqrt((v1.x - v2.x)^2 + (v1.y - v2.y)^2 + (v1.z - v2.z)^2)
 end
 
+
 function GetClosestPlayerToCoords(coords, max_distance, ignore_self)
 	local player_list = players.list(not ignore_self, true, true)
 	local shortest_distance = 10000000
@@ -185,11 +186,30 @@ function GetShapeTestResult(shapetest_id)
 	return data
 end
 
+function LoadWeaponAsset(weapon_id)
+	local hash = util.joaat(weapon_id)
+	while not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) do
+		WEAPON.REQUEST_WEAPON_ASSET(hash, 31, 26)
+		while not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) do
+			util.yield()
+		end
+	end
+	return hash
+end
+
 function ShootPedInHead(ped, weapon_hash, damage)
 	local t1 = PED.GET_PED_BONE_COORDS(ped, 31086, 0, -0.1, 0)
 	local t2 = PED.GET_PED_BONE_COORDS(ped, 31086, 0, 0.1, 0)
 	local pveh = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), false)
 	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(t1.x, t1.y, t1.z, t2.x, t2.y, t2.z, damage, true, weapon_hash, players.user_ped(), false, true, 10000, pveh)
+end
+
+-- More generic function than the one above, can target vehicles/peds/any entity
+function ShootAtEntity(entity, weapon_hash, damage)
+	local t2 = ENTITY.GET_ENTITY_COORDS(entity)
+	local t1 = t2
+	t1.z = t1.z + 0.1
+	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(t1.x, t1.y, t1.z, t2.x, t2.y, t2.z, damage, true, weapon_hash, players.user_ped(), true, false, 10000)
 end
 
 function TeleportPed(ped, coords, rotation, with_vehicle)
