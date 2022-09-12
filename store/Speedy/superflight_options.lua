@@ -81,45 +81,61 @@ end
 
 local function DoMainWeapons(toggle)
 	bSuperFlightWeaponsEnabled = toggle
+	local fire_mode = 1 -- MG or ROCKETS
+	local weapon_tbl = {
+		{
+			name = 'MG',
+			id = 'VEHICLE_WEAPON_DOGFIGHTER_MG',
+			speed = 10000
+		},
+		{
+			name = 'CANNON',
+			id = 'VEHICLE_WEAPON_PLAYER_LAZER',
+			speed = 10000
+		}
+	}
 
 	util.create_tick_handler(function()
 		local player = PLAYER.PLAYER_PED_ID()
 		local parastate = PED.GET_PED_PARACHUTE_STATE(player)
 		if (parastate == 0) then
 			local pcoords = ENTITY.GET_ENTITY_COORDS(player)
+			local pfv = ENTITY.GET_ENTITY_FORWARD_VECTOR(player)
 			local tcoords = GetOffsetFromCam(100)
 
-			--local hash = util.joaat('VEHICLE_WEAPON_PLAYER_LAZER')
-			local hash = util.joaat('VEHICLE_WEAPON_DOGFIGHTER_MG')
-
-			-- Wait while assets load
-			if not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) then
-				WEAPON.REQUEST_WEAPON_ASSET(hash, 31, 26)
-				while not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) do
-					wait()
+			if (CheckInput('[T2]B')) then
+				fire_mode = fire_mode + 1
+				if (fire_mode > #weapon_tbl) then
+					fire_mode = 1
 				end
 			end
+			local hash = LoadWeaponAsset(weapon_tbl[fire_mode])
+			util.draw_debug_text('Fire Mode: [' .. weapon_tbl[fire_mode] .. ']')
 
 			if (bSuperFlightWeapAimbotEnabled) then
-				local target_player = GetClosestPlayerToCoords(tcoords, 100)
-				if (target_player ~= -1 and target_player ~= PLAYER.PLAYER_ID()) then
-					local target_player_ped = PLAYER.GET_PLAYER_PED(target_player)
-					--update tcoords
-					tcoords = ENTITY.GET_ENTITY_COORDS(target_player_ped)
-					GRAPHICS.DRAW_LINE(pcoords.x, pcoords.y, pcoords.z, tcoords.x, tcoords.y, tcoords.z, 255, 50, 50, 255)
+				local target_ped = GetClosestPedToCoords(tcoords, 200, false, true, false, false, true)
+				if (ENTITY.IS_ENTITY_A_PED(target_ped.iPedId)) then
+					DrawDebugLine(target_ped.v3Coords, pcoords, {r=255,g=50,b=50,a=255})
+					tcoords = target_ped.v3Coords
+					local delta = GetAimAheadDelta(player, target_ped.iPedId, 1500)
+					if (delta > 0) then
+						local tvel = ENTITY.GET_ENTITY_VELOCITY(target_ped.iPedId)
+						tvel:mul(delta)
+						tcoords:add(tvel)
+					end
 					util.draw_ar_beacon(tcoords)
 				end
 			end
 
-			if PAD.IS_DISABLED_CONTROL_PRESSED(2, keys['RT']) then
+			if (CheckInput('[D]RT')) then
 				MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(
-					pcoords.x, pcoords.y, pcoords.z,
+					pcoords.x+(pfv.x*5), pcoords.y+(pfv.y*5), pcoords.z+(pfv.z*5),
 					tcoords.x, tcoords.y, tcoords.z,
-					200,
+					WEAPON.GET_WEAPON_DAMAGE(hash),
 					true,
 					hash,
 					player,
-					true, true, -1.0
+					true, true, 1500
 				)
 			end
 			if not (PED.IS_PED_IN_ANY_VEHICLE(player, true)) then

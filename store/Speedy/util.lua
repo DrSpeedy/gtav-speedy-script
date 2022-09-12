@@ -1,81 +1,113 @@
----@diagnostic disable: deprecated
 -- DrSpeedy#1852
 -- https://github.com/DrSpeedy
 
+---Toast Notification
+---@param message string
 function Notification(message)
-	message = '[Test] ' .. message:gsub('[~]%w[~]', '')
+	message = '[SpeedyScript] ' .. message:gsub('[~]%w[~]', '')
 	if not string.match(message, '[%.?]$') then message = message .. '.' end
 	util.toast(message, TOAST_ABOVE_MAP)
 end
 
 -- Script(RAGE) global memory wrappers
+
+---Read script global as byte
+---@param global integer address
+---@return integer|nil pointer or nil
 function ReadGlobalByte(global)
 	local address = memory.script_global(global)
 	return address ~= 0 and memory.read_byte(address) or nil
 end
 
+---Read script global as int
+---@param global integer address
+---@return integer|nil pointer or nil
 function ReadGlobalInt(global)
     local address = memory.script_global(global)
     return address ~= 0 and memory.read_int(address) or nil
 end
 
+---Read script global as float
+---@param global integer address
+---@return integer|nil pointer or nil
 function ReadGlobalFloat(global)
     local address = memory.script_global(global)
     return address ~= 0 and memory.read_float(address) or nil
 end
 
+---Read script global as string
+---@param global integer address
+---@return string|nil pointer or nil
 function ReadGlobalString(global)
     local address = memory.script_global(global)
     return address ~= 0 and memory.read_string(address) or nil
 end
 
+---Write byte to script global
+---@param global integer address
+---@param value any byte
 function WriteGlobalByte(global, value)
     local address = memory.script_global(global)
     if (address ~= 0) then memory.write_byte(address, value) end
 end
 
+---Write int to script global
+---@param global integer address
+---@param value integer int
 function WriteGlobalInt(global, value)
     local address = memory.script_global(global)
     if (address ~= 0) then memory.write_int(address, value) end
 end
 
-function RotationToDirection(rotation) --https://forum.cfx.re/t/get-position-where-player-is-aiming/1903886/2
+---Rotation vector to direction vector
+---https://forum.cfx.re/t/get-position-where-player-is-aiming/1903886/2
+---@param rotation userdata vector3
+---@return userdata vector3 direction
+function RotationToDirection(--[[v3]] rotation)
 	local adjusted_rotation =
 	{
 		x = (math.pi / 180) * rotation.x,
 		y = (math.pi / 180) * rotation.y,
 		z = (math.pi / 180) * rotation.z
 	}
-	local direction =
-	{
-		x = -math.sin(adjusted_rotation.z) * math.abs(math.cos(adjusted_rotation.x)),
-		y =  math.cos(adjusted_rotation.z) * math.abs(math.cos(adjusted_rotation.x)),
-		z =  math.sin(adjusted_rotation.x)
-	}
+	local direction = v3.new(
+		-math.sin(adjusted_rotation.z) * math.abs(math.cos(adjusted_rotation.x)),
+		math.cos(adjusted_rotation.z) * math.abs(math.cos(adjusted_rotation.x)),
+		math.sin(adjusted_rotation.x)
+	)
 	return direction
 end
 
-function GetOffsetFromCam(distance)
+---Get coordinate vector for position X distance out from the camera
+---@param distance number distance
+---@return userdata vector3 coordinates
+function GetOffsetFromCam(--[[int]] distance)
 	local cam_rot = CAM.GET_GAMEPLAY_CAM_ROT(0)
 	local cam_pos = CAM.GET_GAMEPLAY_CAM_COORD()
 	local direction = RotationToDirection(cam_rot)
-	local destination =
-	{
-		x = cam_pos.x + direction.x * distance,
-		y = cam_pos.y + direction.y * distance,
-		z = cam_pos.z + direction.z * distance
-	}
+	local destination = v3.new(
+		cam_pos.x + direction.x * distance,
+		cam_pos.y + direction.y * distance,
+		cam_pos.z + direction.z * distance
+	)
 	return destination
 end
 
-function GetDistanceBetweenCoords(vector1, vector2)
+---Distance between two coordinate vectors
+---@param vector1 userdata source vector3
+---@param vector2 userdata target vector3
+---@return number
+function GetDistanceBetweenCoords(--[[v3]] vector1,--[[v3]] vector2)
 	local v1 = vector1
 	local v2 = vector2
-
 	return math.sqrt((v1.x - v2.x)^2 + (v1.y - v2.y)^2 + (v1.z - v2.z)^2)
 end
 
-
+---Deprecated use GetClosestPedToCoords() instead
+---@param coords userdata vector3
+---@param max_distance number search radius
+---@param ignore_self boolean ignore self in search
+---@return integer integer player id closest to coordinates or -1
 function GetClosestPlayerToCoords(coords, max_distance, ignore_self)
 	local player_list = players.list(not ignore_self, true, true)
 	local shortest_distance = 10000000
@@ -95,6 +127,15 @@ function GetClosestPlayerToCoords(coords, max_distance, ignore_self)
 	return shortest_dist_player
 end
 
+---Get closest Ped entity to a set of coordinates and return a table of data about them
+---@param coords userdata coordinate vector3
+---@param radius number search radius
+---@param use_fov boolean require ped to be within FOV
+---@param include_peds boolean include AI pedestrians in search
+---@param include_self boolean include self in search
+---@param include_friends boolean include friends in search
+---@param include_players boolean include players/strangers in search
+---@return table table Returns table with target's Ped handle, Network ID, Network Name, Coord V3, Forward V3
 function GetClosestPedToCoords(coords, radius, use_fov, include_peds, include_self, include_friends, include_players)
 	local ped_list = entities.get_all_peds_as_handles()
 	local shortest_distance = 10000000
@@ -152,6 +193,13 @@ function GetClosestPedToCoords(coords, radius, use_fov, include_peds, include_se
 	}
 end
 
+---Wrapper function for SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE
+---@param start_v3 userdata vector3 coordinates
+---@param end_v3 userdata vector3 coordinates
+---@param flags integer shapetest flags
+---@param entity_to_ignore integer entity handle
+---@param p8 integer p8
+---@return integer integer shapetest handle
 function StartShapeTest(start_v3, end_v3, flags, entity_to_ignore, p8)
 	return SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
 		start_v3.x,
@@ -166,6 +214,9 @@ function StartShapeTest(start_v3, end_v3, flags, entity_to_ignore, p8)
 	)
 end
 
+---Get results of StartShapeTest()
+---@param shapetest_id integer shapetest handle
+---@return table table Returns bHit, v3Coords, v3SurfaceNormal and Entity handle
 function GetShapeTestResult(shapetest_id)
 	local ptr_hit = memory.alloc(1) 		-- BOOL
 	local ptr_v3 = memory.alloc(24) 		-- Vector3
@@ -186,6 +237,9 @@ function GetShapeTestResult(shapetest_id)
 	return data
 end
 
+---Load weapon asset from id string
+---@param weapon_id string weapon id
+---@return integer integer joaat hash
 function LoadWeaponAsset(weapon_id)
 	local hash = util.joaat(weapon_id)
 	while not (WEAPON.HAS_WEAPON_ASSET_LOADED(hash)) do
@@ -197,6 +251,41 @@ function LoadWeaponAsset(weapon_id)
 	return hash
 end
 
+---To get offset at where a projectile will hit a moving target:
+---target_coords_v3 + (target_velocity_v3 * delta)
+---https://www.gamedeveloper.com/programming/shooting-a-moving-target
+---@param source_entity integer source entity handle
+---@param target_entity integer target entity handle
+---@param proj_speed number projectile speed
+---@return number delta multiplier needed for aim ahead calculation
+function GetAimAheadDelta(source_entity, target_entity, proj_speed)
+	local spos = ENTITY.GET_ENTITY_COORDS(source_entity)
+	local svel = ENTITY.GET_ENTITY_VELOCITY(source_entity)
+	local tvel = ENTITY.GET_ENTITY_VELOCITY(target_entity)
+	local tpos = ENTITY.GET_ENTITY_COORDS(target_entity)
+
+	local delta = tpos
+	delta:sub(spos)
+	local vr = tvel
+	vr:sub(svel)
+
+	local a = v3.dot(vr, vr) - proj_speed^2
+	local b = 2*v3.dot(vr, delta)
+	local c = v3.dot(delta, delta)
+
+	local desc = b^2 - 4*a*c
+
+	if (desc > 0) then
+		return 2*c / (math.sqrt(desc) - b)
+	else
+		return -1
+	end
+end
+
+---Fire bullet into the back of a ped's head
+---@param ped integer ped handle
+---@param weapon_hash integer weapon joaat hash
+---@param damage number weapon damage
 function ShootPedInHead(ped, weapon_hash, damage)
 	local t1 = PED.GET_PED_BONE_COORDS(ped, 31086, 0, -0.1, 0)
 	local t2 = PED.GET_PED_BONE_COORDS(ped, 31086, 0, 0.1, 0)
@@ -204,7 +293,10 @@ function ShootPedInHead(ped, weapon_hash, damage)
 	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(t1.x, t1.y, t1.z, t2.x, t2.y, t2.z, damage, true, weapon_hash, players.user_ped(), false, true, 10000, pveh)
 end
 
--- More generic function than the one above, can target vehicles/peds/any entity
+---More generic function than ShootPedInHead() can target vehicles/peds/any entity
+---@param entity integer entity handle
+---@param weapon_hash integer weapon joaat hash
+---@param damage number weapon damage
 function ShootAtEntity(entity, weapon_hash, damage)
 	local t2 = ENTITY.GET_ENTITY_COORDS(entity)
 	local t1 = t2
@@ -212,6 +304,11 @@ function ShootAtEntity(entity, weapon_hash, damage)
 	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(t1.x, t1.y, t1.z, t2.x, t2.y, t2.z, damage, true, weapon_hash, players.user_ped(), true, false, 10000)
 end
 
+---Teleport pedestrian with or without their vehicle
+---@param ped integer ped handle
+---@param coords userdata vector3
+---@param rotation userdata vector3
+---@param with_vehicle boolean boolean
 function TeleportPed(ped, coords, rotation, with_vehicle)
 	local keep_velocity = true
 	local entity = 0
@@ -250,10 +347,17 @@ function TeleportPed(ped, coords, rotation, with_vehicle)
 	end
 end
 
+---Wrapper function for GRAPHICS.DRAW_LINE()
+---@param pos1 userdata vector3
+---@param pos2 userdata vector3
+---@param rgba table RGBA table
 function DrawDebugLine(pos1, pos2, rgba)
 	GRAPHICS.DRAW_LINE(pos1.x, pos1.y, pos1.z, pos2.x, pos2.y, pos2.z, rgba.r, rgba.g, rgba.b, rgba.a)
 end
 
+---Request control over network entity
+---@param entity integer
+---@return boolean
 function RequestControlOfNetworkEntity(entity)
 	if (not NETWORK.NETWORK_IS_IN_SESSION()) then
 		return true
