@@ -46,6 +46,9 @@ require 'store/Speedy/online_quick_opts'
 -- Debug
 require 'store/Speedy/debug_options'
 
+-- Flight HUD
+require 'store/Speedy/flight_hud'
+
 local function IsPlayerPointing()
     -- skidded from wiriscript
     return ReadGlobalInt(4521801 + 930) == 3
@@ -223,12 +226,17 @@ local function Init()
     end)
 
     menuIdTbl['Self'] = menu.list(menu.my_root(), 'Self', {}, '')
+    menuIdTbl['FlightHUD'] = menu.list(menu.my_root(), 'Flight HUD', {}, '')
     MenuOnlineQuickOptsSetup(menu.my_root())
     menuIdTbl['Debug'] = menu.list(menu.my_root(), 'Debug', {}, '')
 
+    -- Self
     MenuSelfSetup(menuIdTbl['Self'])
     MenuSuperRunSetup(menuIdTbl['Self.Super Run'])
     MenuSuperFlightSetup(menuIdTbl['Self.Super Flight'])
+
+    --- Flight Hud
+    MenuFlightHUDSetup(menuIdTbl['FlightHUD'])
 
     MenuDebugOptionsSetup(menuIdTbl['Debug'])
 end

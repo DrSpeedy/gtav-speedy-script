@@ -60,7 +60,7 @@ end
 function DoDrawCrosshair(toggle)
     bDrawCrosshairEnabled = toggle
 
-    local asset_file = 'resources\\Speedy\\cr3.png'
+    local asset_file = 'resources\\Speedy\\crosshairs\\cr1.png'
     local d3texture = directx.create_texture(filesystem.scripts_dir() .. asset_file)
     local d3t_size = 0.03
     local pos_x = 0.5
@@ -70,7 +70,9 @@ function DoDrawCrosshair(toggle)
     local rotation = 0.0
 
     util.create_tick_handler(function()
-        directx.draw_texture(d3texture, d3t_size, d3t_size, cent_x, cent_y, pos_x, pos_y, rotation, {r = 1.0, g = 1.0, b = 1.0, a = 1.0})
+        if not PED.IS_PED_IN_ANY_VEHICLE(PLAYER.PLAYER_PED_ID(), false) then
+            directx.draw_texture(d3texture, d3t_size, d3t_size, cent_x, cent_y, pos_x, pos_y, rotation, {r = 1.0, g = 1.0, b = 1.0, a = 1.0})
+        end
         return bDrawCrosshairEnabled
     end)
 end
@@ -112,7 +114,7 @@ function MenuDebugOptionsSetup(menu_root)
     menu.toggle(menu_root, 'Draw Forward Vector', {}, '', function(toggle) DoDrawForwardVector(toggle) end)
     menu.toggle(menu_root, 'Draw Velocity Vector', {}, '', function(toggle) DoDrawVelocityVector(toggle) end)
     menu.toggle(menu_root, 'Draw Debug Overlays', {}, '', function(toggle) DoDrawDebugOverlays(toggle) end)
-    menu.toggle(menu_root, 'Draw Crosshair', {}, '', function(toggle) DoDrawCrosshair(toggle) end)
-    menu.toggle(menu_root, 'Draw ESP', {}, '', function(toggle) DoDrawESP(toggle) end)
+    menu.toggle(menu_root, 'Draw Crosshair', {}, 'Displays crosshair while on foot', function(toggle) DoDrawCrosshair(toggle) end)
+    menu.toggle(menu_root, 'Draw ESP', {}, 'Hold Mod+RB to activate string mode', function(toggle) DoDrawESP(toggle) end)
     menu.toggle(menu_root, 'Draw Ped Head Debug', {}, '', function(toggle) DoAimbotDebug(toggle) end)
 end
