@@ -1,17 +1,27 @@
 local bFlightHUDEnabled = false
+local bContactThreadRunning = false
 
-function GetEntityHeadingSigned(entity)
-    local u_h = -ENTITY.GET_ENTITY_ROTATION(entity).z
-    local h = u_h
-    if u_h < 0 then
-        h = 360 + u_h
+function GetEntityHeadingUnsigned(entity)
+    local s_h = -ENTITY.GET_ENTITY_ROTATION(entity).z
+    local h = s_h
+    if s_h < 0 then
+        h = 360 + s_h
     end
     return h
 end
 
+function GetEntityPitchUnsigned(entity)
+    local s_p = ENTITY.GET_ENTITY_ROTATION(entity).y
+    local p = s_p
+    if s_p < 0 then
+        p = 360 + s_p
+    end
+    return p
+end
+
 function GetEntityMapDirection(entity)
     local str = ''
-    local h = GetEntityHeadingSigned(entity)
+    local h = GetEntityHeadingUnsigned(entity)
 
     if h >= 0 and h < 22.5 then
         str = 'N'
@@ -39,14 +49,15 @@ end
 function DoDrawCompass()
     local f_draw_y = 0.1
     local player_veh = entities.get_user_vehicle_as_handle()
-    local h = GetEntityHeadingSigned(player_veh)
+    local h = GetEntityHeadingUnsigned(player_veh)
 
     local compass_col = {r=255,g=0,b=0,a=255}
     directx.draw_text(0.5, 0, "HDG: " .. tostring(math.floor(h)) .. "° " .. GetEntityMapDirection(player_veh), 1, 0.5, compass_col, true)
     directx.draw_rect(0.3, f_draw_y, 0.4, 3 / 1000, compass_col)
     directx.draw_rect(0.5, f_draw_y + 0.015, 3 / 1000, 0.03, compass_col)
 
-    local a = ((h % 10) + (h - math.floor(h))) / 10
+    local s_h = ENTITY.GET_ENTITY_ROTATION(player_veh).z
+    local a = ((s_h % 10) + (s_h - math.floor(s_h))) / 10
     local b = math.floor(h / 10)
     local c = b - 5
     if c < 0 then
@@ -93,20 +104,125 @@ function DoDrawArtificialHorizon()
     local player_veh = entities.get_user_vehicle_as_handle()
     local player_veh_coords = ENTITY.GET_ENTITY_COORDS(player_veh)
     local player_veh_fv = ENTITY.GET_ENTITY_FORWARD_VECTOR(player_veh)
-    local f_draw_y = ENTITY.GET_ENTITY_ROTATION(player_veh).y
+    local v3_rot = ENTITY.GET_ENTITY_ROTATION(player_veh)
+    local col = {r = 0, g = 200, b = 0, a = 100}
+    local col_horizon = {r = 200, g = 200, b = 200, a = 255}
 
     local v2_screen_coords = WorldToScreen(v3.add(player_veh_coords, v3.mul(player_veh_fv, 100)))
     local a = -(v2_screen_coords.y / 0.5)
     local b = v2_screen_coords.x / 0.5
+    a = 0
+    b = 0
 
+    local c = 0.3
+    local d = 0.1
+
+    local pitch = v3_rot.x
+    if pitch > 90 then
+        pitch = 90 - pitch - 90
+    elseif pitch < -90 then
+        pitch = -((pitch + 90) - 90)
+    end
+    -- ((s_h % 10) + (s_h - math.floor(s_h))) / 10
+    local e = ((pitch % 10) + (pitch - math.floor(pitch))) / 10
+    local f = pitch - pitch % 10
+
+    for i=0,4,1 do
+        local g = 0
+        if i == 0 then
+            g = f + 20
+        elseif i == 1 then
+            g = f + 10
+        elseif i == 2 then
+            g = f
+        elseif i == 3 then
+            g = f - 10
+        elseif i == 4 then
+            g = f -20
+        end
+        if g > 90 then
+            g = 90 - (g - 90)
+        elseif g < -90 then
+            g = -(g + 90) - 90
+        end
+
+        local str = tostring(math.floor(g))
+        local y = c + i * d - a + e * d
+        util.draw_debug_text(str[1])
+        if str == '0' then   
+            directx.draw_rect(b + 0.4 - (4 / 160) - 0.03437500074505806, y, 15 / 160, 1 / 500, col_horizon)
+            directx.draw_rect(b + 0.6 - 0.02812499925494194, y, 15 / 160, 1 / 500, col_horizon)
+        else
+            if str[1] == '-' then          
+                for j=0,5,1 do
+                    directx.draw_rect(0.4 + (j * 2) * (1/160) + b - 0.03437500074505806, y, 1 / 160, 1 / 500, col)
+                    directx.draw_rect(0.6 + (j * 2) * (1/160) + b - 0.02812499925494194, y, 1 / 160, 1 / 500, col)
+                    --directx.draw_rect
+                end
+            else
+                directx.draw_rect(0.4 + b - 0.03437500074505806, y, 11 / 160, 1/ 500, {r=0, g=255,b=0,a=150})
+                directx.draw_rect(0.6 + b - 0.02812499925494194, y, 11 / 160, 1/ 500, {r=0, g=255,b=0,a=150})
+            end
+            directx.draw_rect(0.3635 + b, y - 0.004, 1 / 500, 0.009735, col)
+            directx.draw_rect(0.6395 + b, y - 0.004, 1 / 500, 0.009735, col)
+        end
+        directx.draw_text(0.3425 + b, y, str, 1, 0.4, col)
+        directx.draw_text(0.6575 + b, y, str, 1, 0.4, col)
+    end
+
+end
+
+function StartContactsThread()
+    local player_veh = entities.get_user_vehicle_as_handle()
+    local players_unknown = players.list(true, true, true)
+    local players_friends = players.list(false, true, false)
+    local all_vehicles = entities.get_all_vehicles_as_handles()
+    local txt_contact = directx.create_texture(filesystem.resources_dir() .. '/Speedy/air_vehicles/contact.png')
+
+    
+    if not bContactThreadRunning then
+        util.create_thread(function()
+            if not bContactThreadRunning then
+                bContactThreadRunning = true
+            end
+            while bContactThreadRunning do
+                local my_pos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+                for ph = 1, #players_unknown do
+                    local ped_id = PLAYER.GET_PLAYER_PED(ph)
+                    local coords = ENTITY.GET_ENTITY_COORDS(ped_id)
+                    --util.draw_ar_beacon(coords)
+                    local draw_pos = WorldToScreen(coords)
+                    local col = {r = 0, g = 255, b = 100, a = 255}
+                    
+                    if PED.IS_PED_IN_ANY_VEHICLE(ped_id) then
+                        if PED.IS_PED_IN_ANY_HELI(ped_id) or PED.IS_PED_IN_ANY_PLANE(ped_id) then
+                            col = {r = 255, g = 0, b = 0, a = 255}
+                        end
+
+                        directx.draw_texture(txt_contact, 0.005, 0.005, 0.5, 0.5, draw_pos.x, draw_pos.y, 0, col)
+                        local dist_str = 'D: ' .. tostring(math.floor(GetDistanceBetweenCoords(my_pos, coords)))
+                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.02, dist_str, 0, 0.3, col)
+                    end
+                end
+                util.yield()
+            end
+        end)
+    end
 
 end
 
 function DoFlightHUD(toggle)
     bFlightHUDEnabled = toggle
+    if not bFlightHUDEnabled then
+        bContactThreadRunning = false
+    end
+    if bFlightHUDEnabled then
+        StartContactsThread()
+    end
     util.create_tick_handler(function()
         if PED.IS_PED_IN_ANY_PLANE(players.user_ped()) or PED.IS_PED_IN_ANY_HELI(players.user_ped()) then
             DoDrawCompass()
+            DoDrawArtificialHorizon()
         end
 
         return bFlightHUDEnabled
