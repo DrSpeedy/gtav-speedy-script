@@ -26,11 +26,11 @@ local function DoSuperFlight(toggle)
 			ENTITY.SET_ENTITY_MAX_SPEED(player,500)
 			ENTITY.SET_ENTITY_MAX_SPEED(playerped,500)
 			
-			if not (PAD.IS_CONTROL_PRESSED(2, keys['LT'])) then
+			if not (CheckInput('[D]LT')) then
 				-- Start Skydiving w/ either pressing R3 while ~3m off the ground
 				if (parastate ~= 0 and grounddistance > 3) then
 					if (jumping or falling or ragdoll) then
-						if (PAD.IS_CONTROL_PRESSED(2, keys['R3'])) then -- R3
+						if (CheckInput('[D]R3')) then -- R3
 							TASK.TASK_SKY_DIVE(player)
 						end
 					end
@@ -41,19 +41,19 @@ local function DoSuperFlight(toggle)
 					local phase = 1
 
 					-- Boost p1
-					if (PAD.IS_CONTROL_PRESSED(2, keys['RB'])) then
+					if (CheckInput('[D]RB')) then
 						phase = 2
 						vz = direction.z * aSpeedMults[phase]
 					end
 
 					-- Boost p2
-					if (PAD.IS_CONTROL_PRESSED(2, keys['LB'])) then
+					if (CheckInput('[D]LB')) then
 						phase = 3
 						vz = direction.z * aSpeedMults[phase]
 					end
-
+CheckInput()
 					-- Boost p3
-					if (PAD.IS_CONTROL_PRESSED(2, keys['LB']) and PAD.IS_CONTROL_PRESSED(2, keys['RB'])) then
+					if (CheckInput('[D]LB:[D]RB')) then
 						phase = 4
 						vz = direction.z * aSpeedMults[phase]
 					end
