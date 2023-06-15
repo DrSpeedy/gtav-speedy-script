@@ -38,3 +38,7 @@ end)
 RegisterCheat('B,B,X,B,Y', function ()
     menu.trigger_commands('vehiclestuntmolotok')
 end)
+
+RegisterCheat('X,X,B,X,A', function ()
+    menu.trigger_commands('vehiclef166')
+end)

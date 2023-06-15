@@ -366,3 +366,16 @@ function RequestControlOfNetworkEntity(entity)
 	NETWORK.SET_NETWORK_ID_CAN_MIGRATE(id, true)
 	return NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
 end
+
+---In game coordinates to 2D screen coordinates
+---@param coords userdata vector3
+---@return table vector2 screen coordinates
+function WorldToScreen(coords)
+	local x_ptr = memory.alloc(8)
+	local y_ptr = memory.alloc(8)
+	GRAPHICS.GET_SCREEN_COORD_FROM_WORLD_COORD(coords.x, coords.y, coords.z, x_ptr, y_ptr)
+	return {
+		x = memory.read_float(x_ptr),
+		y = memory.read_float(y_ptr)
+	}
+end

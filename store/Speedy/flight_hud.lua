@@ -69,7 +69,6 @@ function DoDrawCompass()
         end
 
         local mark = tostring(e)
-        util.draw_debug_text(mark)
         if e == 0 then
             mark = 'N'
         elseif e == 9 then
@@ -88,6 +87,19 @@ function DoDrawCompass()
             directx.draw_rect(x, f_draw_y - 0.0075, 3 / 1000, 0.015, compass_col)
         end
     end
+end
+
+function DoDrawArtificialHorizon()
+    local player_veh = entities.get_user_vehicle_as_handle()
+    local player_veh_coords = ENTITY.GET_ENTITY_COORDS(player_veh)
+    local player_veh_fv = ENTITY.GET_ENTITY_FORWARD_VECTOR(player_veh)
+    local f_draw_y = ENTITY.GET_ENTITY_ROTATION(player_veh).y
+
+    local v2_screen_coords = WorldToScreen(v3.add(player_veh_coords, v3.mul(player_veh_fv, 100)))
+    local a = -(v2_screen_coords.y / 0.5)
+    local b = v2_screen_coords.x / 0.5
+
+
 end
 
 function DoFlightHUD(toggle)
