@@ -379,3 +379,25 @@ function WorldToScreen(coords)
 		y = memory.read_float(y_ptr)
 	}
 end
+
+function IsHashProjectile(hash)
+	local all = {
+        util.joaat("w_ex_vehiclemissile_1"),
+        util.joaat("w_ex_vehiclemissile_2"),
+        util.joaat("w_ex_vehiclemissile_3"),
+        util.joaat("w_ex_vehiclemissile_4"),
+        util.joaat("w_ex_vehiclem,tar"),
+        util.joaat("w_lr_rpg_rocket"),
+        util.joaat("w_lr_homing_rocket"),
+        util.joaat("w_lr_firew,k_rocket"),
+        util.joaat("xm_prop_x17_silo_rocket_01")
+	}
+	return table.contains(all, hash)
+end
+
+-- NoWiri's
+function GetEntityOwner(entity)
+	local pEntity = entities.handle_to_pointer(entity)
+	local addr = memory.read_long(pEntity + 0xD0)
+	return (addr ~= 0) and memory.read_byte(addr + 0x49) or -1
+end

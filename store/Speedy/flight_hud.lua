@@ -1,5 +1,8 @@
 local bFlightHUDEnabled = false
 local bContactThreadRunning = false
+local bProjectileRadarThreadRunning = false
+
+local bMissileNearby = false
 
 function GetEntityHeadingUnsigned(entity)
     local s_h = -ENTITY.GET_ENTITY_ROTATION(entity).z
@@ -51,7 +54,7 @@ function DoDrawCompass()
     local player_veh = entities.get_user_vehicle_as_handle()
     local h = GetEntityHeadingUnsigned(player_veh)
 
-    local compass_col = {r=255,g=0,b=0,a=255}
+    local compass_col = {r=0,g=255,b=0,a=255}
     directx.draw_text(0.5, 0, "HDG: " .. tostring(math.floor(h)) .. "° " .. GetEntityMapDirection(player_veh), 1, 0.5, compass_col, true)
     directx.draw_rect(0.3, f_draw_y, 0.4, 3 / 1000, compass_col)
     directx.draw_rect(0.5, f_draw_y + 0.015, 3 / 1000, 0.03, compass_col)
@@ -174,7 +177,7 @@ end
 
 function StartContactsThread()
     local player_veh = entities.get_user_vehicle_as_handle()
-    local players_unknown = players.list(true, true, true)
+    local players_unknown = players.list(false, true, true)
     local players_friends = players.list(false, true, false)
     local all_vehicles = entities.get_all_vehicles_as_handles()
     local txt_contact = directx.create_texture(filesystem.resources_dir() .. '/Speedy/air_vehicles/contact.png')
@@ -182,12 +185,13 @@ function StartContactsThread()
     
     if not bContactThreadRunning then
         util.create_thread(function()
-            if not bContactThreadRunning then
-                bContactThreadRunning = true
-            end
+            bContactThreadRunning = true
             while bContactThreadRunning do
                 local my_pos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
                 for ph = 1, #players_unknown do
+                    if ph == players.user() then
+                        pluto_continue
+                    end
                     local ped_id = PLAYER.GET_PLAYER_PED(ph)
                     local coords = ENTITY.GET_ENTITY_COORDS(ped_id)
                     --util.draw_ar_beacon(coords)
@@ -201,13 +205,52 @@ function StartContactsThread()
 
                         directx.draw_texture(txt_contact, 0.005, 0.005, 0.5, 0.5, draw_pos.x, draw_pos.y, 0, col)
                         local dist_str = 'D: ' .. tostring(math.floor(GetDistanceBetweenCoords(my_pos, coords)))
+                        
+                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.03, PLAYER.GET_PLAYER_NAME(ph), 0, 0.3, col)
                         directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.02, dist_str, 0, 0.3, col)
+                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.01, 'A: ' .. tostring(math.floor(coords.z)), 0, 0.3, col)
+                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y, 'H: ' .. GetEntityMapDirection(ped_id), 0, 0.3, col)
                     end
                 end
-                util.yield()
+                util.yield(1)
             end
         end)
     end
+end
+
+function StartProjectileRadarThread()
+    local blips = {}
+    util.create_thread(function(t)
+        bProjectileRadarThreadRunning = true
+
+        while bProjectileRadarThreadRunning do
+            util.draw_debug_text('Running radar')
+            for i,j in pairs(blips) do
+                if HUD.GET_BLIP_INFO_ID_ENTITY_INDEX(j) == 0 then
+                    util.remove_blip(j)
+                    blips[i] = nil
+                end
+            end
+            bMissileNearby = false
+            local game_objects = entities.get_all_objects_as_handles()
+            for l,k in pairs(game_objects) do
+                if IsHashProjectile(ENTITY.GET_ENTITY_MODEL(k)) then
+                    local c1 = ENTITY.GET_ENTITY_COORDS(k)
+                    local c2 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entities.get_user_vehicle_as_handle(), 0, -300, 0)
+                    if (GetDistanceBetweenCoords(c1, c2) < 300 and GetEntityOwner(k) ~= players.user()) then
+                        bMissileNearby = true
+                    end
+                    if HUD.GET_BLIP_FROM_ENTITY(k) == 0 then
+                        local prj = HUD.ADD_BLIP_FOR_ENTITY(k)
+                        HUD.SET_BLIP_SPRITE(prj, 443)
+                        HUD.SET_BLIP_COLOUR(prj, 75)
+                        blips[#blips + 1] = prj
+                    end
+                end
+            end
+            util.yield(1)
+        end
+    end)
 
 end
 
@@ -215,14 +258,40 @@ function DoFlightHUD(toggle)
     bFlightHUDEnabled = toggle
     if not bFlightHUDEnabled then
         bContactThreadRunning = false
-    end
-    if bFlightHUDEnabled then
+        bProjectileRadarThreadRunning = false
+    else
         StartContactsThread()
+        StartProjectileRadarThread()
     end
     util.create_tick_handler(function()
         if PED.IS_PED_IN_ANY_PLANE(players.user_ped()) or PED.IS_PED_IN_ANY_HELI(players.user_ped()) then
             DoDrawCompass()
             DoDrawArtificialHorizon()
+
+            if VEHICLE.GET_LANDING_GEAR_STATE(entities.get_user_vehicle_as_handle()) == 0 then
+                directx.draw_text(0.50, 0.40, "LANDING GEAR DOWN", 5, 0.5, {r=255,g=0,b=0,a=255}, false)
+            end
+
+            local knts = (ENTITY.GET_ENTITY_SPEED(entities.get_user_vehicle_as_handle()) * 2.236936)*0.868976
+            directx.draw_text(0.195, 0.42, tostring(math.ceil(knts)) .. " KNTS", 4, 1.2, {r=0,g=255,b=0,a=255}, false)
+
+            local altitude = ENTITY.GET_ENTITY_HEIGHT_ABOVE_GROUND(entities.get_user_vehicle_as_handle())
+            if altitude < 50 and VEHICLE.GET_LANDING_GEAR_STATE(entities.get_user_vehicle_as_handle()) ~= 0 then
+                directx.draw_text(0.71, 0.42, "ALT " .. tostring(math.ceil(altitude)), 4, 1, {r=255,g=0,b=0,a=255}, false)
+            else
+                directx.draw_text(0.71, 0.42, "ALT " .. tostring(math.ceil(altitude)), 4, 1, {r=0,g=255,b=0,a=255}, false)
+            end
+
+            local ang = ENTITY.GET_ENTITY_ROTATION(entities.get_user_vehicle_as_handle(), 0)
+            directx.draw_text_client(0.71, 0.46, "PITCH " .. tostring(math.ceil(ang.x)), 4, 0.7, {r=0,g=255,b=0,a=255}, false)
+            directx.draw_text(0.71, 0.48, "ROLL " .. tostring(math.ceil(ang.y)), 4, 0.7, {r=0,g=255,b=0,a=255}, false)
+
+            local z_coord = ENTITY.GET_ENTITY_COORDS(entities.get_user_vehicle_as_handle()).z
+            if z_coord < 50 then
+                directx.draw_text(0.71, 0.5, "ASML " .. tostring(math.ceil(z_coord)), 4, 0.7, {r=255,g=0,b=0,a=255}, false)
+            else
+                directx.draw_text(0.71, 0.5, "ASML " .. tostring(math.ceil(z_coord)), 4, 0.7, {r=0,g=255,b=0,a=255}, false)
+            end
         end
 
         return bFlightHUDEnabled
