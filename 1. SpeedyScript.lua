@@ -1,15 +1,8 @@
 ---@diagnostic disable: undefined-global
 -- Discord: DrSpeedy#1852
 -- https://github.com/DrSpeedy
---[[
-    TODO:
-    * Quick player actions
-    * Loadout manager ripoff
-    * Copy loadout to player
-    * Remove/fix broken aimbot code (camera one)
-    * Auto shoot closest ped to crosshairs in head
-]]
-require 'lib/natives-1627063482'
+
+util.require_natives('1627063482')
 
 menuIdTbl = {}
 keys = {}

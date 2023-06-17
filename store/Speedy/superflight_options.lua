@@ -109,8 +109,9 @@ local function DoMainWeapons(toggle)
 					fire_mode = 1
 				end
 			end
-			local hash = LoadWeaponAsset(weapon_tbl[fire_mode])
-			util.draw_debug_text('Fire Mode: [' .. weapon_tbl[fire_mode] .. ']')
+			
+			util.draw_debug_text('Fire Mode: [' .. weapon_tbl[fire_mode].name .. ']')
+			local hash = LoadWeaponAsset(weapon_tbl[fire_mode].id)
 
 			if (bSuperFlightWeapAimbotEnabled) then
 				local target_ped = GetClosestPedToCoords(tcoords, 200, false, true, false, false, true)
