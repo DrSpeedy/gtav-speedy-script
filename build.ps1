@@ -15,7 +15,7 @@ function RemoveBlockComments($line) {
 }
 
 function ProcessFile($filePath) {
-    $fileContent = Get-Content -Path $filePath
+    $fileContent = Get-Content -Path $filePath -Encoding UTF8
     $newContent = @()
 
     foreach ($line in $fileContent) {

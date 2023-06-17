@@ -54,13 +54,8 @@ function DoDrawCompass()
     local player_veh = entities.get_user_vehicle_as_handle()
     local h = GetEntityHeadingUnsigned(player_veh)
 
-    local ptr = memory.alloc(2)
-    memory.write_byte(ptr, 194)
-    memory.write_byte(ptr + 1, 176)
-    local deg_symb = memory.read_string(ptr)
-
     local compass_col = {r=0,g=255,b=0,a=255}
-    directx.draw_text(0.5, 0, "HDG: " .. tostring(math.floor(h)) .. deg_symb .. " ° " .. GetEntityMapDirection(player_veh), 1, 0.5, compass_col, true)
+    directx.draw_text(0.5, 0, "HDG: " .. tostring(math.floor(h)) .. "° " .. GetEntityMapDirection(player_veh), 1, 0.5, compass_col, true)
     directx.draw_rect(0.3, f_draw_y, 0.4, 3 / 1000, compass_col)
     directx.draw_rect(0.5, f_draw_y + 0.015, 3 / 1000, 0.03, compass_col)
 
@@ -230,7 +225,6 @@ function StartProjectileRadarThread()
         bProjectileRadarThreadRunning = true
 
         while bProjectileRadarThreadRunning do
-            util.draw_debug_text('Running radar')
             for i,j in pairs(blips) do
                 if HUD.GET_BLIP_INFO_ID_ENTITY_INDEX(j) == 0 then
                     util.remove_blip(j)
