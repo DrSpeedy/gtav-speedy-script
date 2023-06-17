@@ -54,8 +54,13 @@ function DoDrawCompass()
     local player_veh = entities.get_user_vehicle_as_handle()
     local h = GetEntityHeadingUnsigned(player_veh)
 
+    local ptr = memory.alloc(2)
+    memory.write_byte(ptr, 194)
+    memory.write_byte(ptr + 1, 176)
+    local deg_symb = memory.read_string(ptr)
+
     local compass_col = {r=0,g=255,b=0,a=255}
-    directx.draw_text(0.5, 0, "HDG: " .. tostring(math.floor(h)) .. "° " .. GetEntityMapDirection(player_veh), 1, 0.5, compass_col, true)
+    directx.draw_text(0.5, 0, "HDG: " .. tostring(math.floor(h)) .. deg_symb .. " ° " .. GetEntityMapDirection(player_veh), 1, 0.5, compass_col, true)
     directx.draw_rect(0.3, f_draw_y, 0.4, 3 / 1000, compass_col)
     directx.draw_rect(0.5, f_draw_y + 0.015, 3 / 1000, 0.03, compass_col)
 
@@ -210,6 +215,7 @@ function StartContactsThread()
                         directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.02, dist_str, 0, 0.3, col)
                         directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.01, 'A: ' .. tostring(math.floor(coords.z)), 0, 0.3, col)
                         directx.draw_text(draw_pos.x + 0.01, draw_pos.y, 'H: ' .. GetEntityMapDirection(ped_id), 0, 0.3, col)
+                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y + 0.01, 'S: ' .. tostring(math.floor(ENTITY.GET_ENTITY_SPEED(ped_id))), 0, 0.3, col)
                     end
                 end
                 util.yield(1)

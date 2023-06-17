@@ -2,6 +2,7 @@
 -- Discord: DrSpeedy#1852
 -- https://github.com/DrSpeedy
 
+ScriptVersion = '1.0.0'
 util.require_natives('1627063482')
 
 menuIdTbl = {}
@@ -36,8 +37,9 @@ require 'store/Speedy/self_menu_options'
 require 'store/Speedy/weapon_loadout'
 -- Online
 require 'store/Speedy/online_quick_opts'
--- Debug
+-- Misc
 require 'store/Speedy/debug_options'
+require 'store/Speedy/about'
 
 -- Flight HUD
 require 'store/Speedy/flight_hud'
@@ -222,6 +224,8 @@ local function Init()
     menuIdTbl['FlightHUD'] = menu.list(menu.my_root(), 'Flight HUD', {}, '')
     MenuOnlineQuickOptsSetup(menu.my_root())
     menuIdTbl['Debug'] = menu.list(menu.my_root(), 'Debug', {}, '')
+    menuIdTbl['About'] = menu.list(menu.my_root(), 'About', {}, '')
+    MenuAboutSetup(menuIdTbl['About'])
 
     -- Self
     MenuSelfSetup(menuIdTbl['Self'])
