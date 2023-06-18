@@ -312,11 +312,15 @@ end
 function TeleportPed(ped, coords, rotation, with_vehicle)
 	local keep_velocity = true
 	local entity = 0
+	local entity_ptr = nil
 	local speed = 0
+	local gear = 0
+	local rpm = 0
 	local vel = v3.new()
 
 	if (with_vehicle and PED.IS_PED_IN_ANY_VEHICLE(ped, true)) then
 		entity = PED.GET_VEHICLE_PED_IS_IN(ped, false)
+		entity_ptr = entities.handle_to_pointer(entity)
 	end
 
 	if (not ENTITY.IS_ENTITY_A_VEHICLE(entity)) then
@@ -326,6 +330,8 @@ function TeleportPed(ped, coords, rotation, with_vehicle)
 	if (keep_velocity) then
 		if (ENTITY.IS_ENTITY_A_VEHICLE(entity)) then
 			speed = ENTITY.GET_ENTITY_SPEED(entity)
+			gear = entities.get_current_gear(entity_ptr)
+			rpm = entities.get_rpm(entity_ptr)
 		else
 			vel = ENTITY.GET_ENTITY_VELOCITY(entity)
 		end
@@ -339,6 +345,8 @@ function TeleportPed(ped, coords, rotation, with_vehicle)
 	if (keep_velocity) then
 		if (ENTITY.IS_ENTITY_A_VEHICLE(entity)) then
 			VEHICLE.SET_VEHICLE_FORWARD_SPEED(entity, speed)
+			entities.set_current_gear(entity_ptr, gear)
+			entities.set_rpm(entity_ptr, rpm)
 		else
 			local boost = ENTITY.GET_ENTITY_FORWARD_VECTOR(entity)
 			boost:mul(10)
@@ -401,3 +409,26 @@ function GetEntityOwner(entity)
 	local addr = memory.read_long(pEntity + 0xD0)
 	return (addr ~= 0) and memory.read_byte(addr + 0x49) or -1
 end
+
+-- Skidded from LanceSpooner
+function LoadModel(hash)
+	local bt = os.time()
+	if not STREAMING.IS_MODEL_VALID(hash) then
+		return
+	end
+	STREAMING.REQUEST_MODEL(hash)
+	while not STREAMING.HAS_MODEL_LOADED(hash) do
+		if os.time() - bt >= 10 then
+			break
+		end
+		util.yield()
+	end
+end
+
+function CreateVehicle(model, v3_pos, heading)
+	local hash = util.joaat(model)
+	LoadModel(hash)
+	local h = entities.create_vehicle(hash, v3_pos, heading)
+	return h
+end
+

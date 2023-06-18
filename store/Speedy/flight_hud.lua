@@ -177,16 +177,17 @@ end
 
 function StartContactsThread()
     local player_veh = entities.get_user_vehicle_as_handle()
-    local players_unknown = players.list(false, true, true)
+    local players_unknown = players.list(true, true, true)
     local players_friends = players.list(false, true, false)
     local all_vehicles = entities.get_all_vehicles_as_handles()
     local txt_contact = directx.create_texture(filesystem.resources_dir() .. '/Speedy/air_vehicles/contact.png')
 
     
     if not bContactThreadRunning then
-        util.create_thread(function()
-            bContactThreadRunning = true
-            while bContactThreadRunning do
+        bContactThreadRunning = true
+        util.create_tick_handler(function()
+            --bContactThreadRunning = true
+            --while bContactThreadRunning do
                 local my_pos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
                 for ph = 1, #players_unknown do
                     if ph == players.user() then
@@ -202,19 +203,21 @@ function StartContactsThread()
                         if PED.IS_PED_IN_ANY_HELI(ped_id) or PED.IS_PED_IN_ANY_PLANE(ped_id) then
                             col = {r = 255, g = 0, b = 0, a = 255}
                         end
-
-                        directx.draw_texture(txt_contact, 0.005, 0.005, 0.5, 0.5, draw_pos.x, draw_pos.y, 0, col)
-                        local dist_str = 'D: ' .. tostring(math.floor(GetDistanceBetweenCoords(my_pos, coords)))
-                        
-                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.03, PLAYER.GET_PLAYER_NAME(ph), 0, 0.3, col)
-                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.02, dist_str, 0, 0.3, col)
-                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.01, 'A: ' .. tostring(math.floor(coords.z)), 0, 0.3, col)
-                        directx.draw_text(draw_pos.x + 0.01, draw_pos.y, 'H: ' .. GetEntityMapDirection(ped_id), 0, 0.3, col)
                         directx.draw_text(draw_pos.x + 0.01, draw_pos.y + 0.01, 'S: ' .. tostring(math.floor(ENTITY.GET_ENTITY_SPEED(ped_id))), 0, 0.3, col)
+                    else
+                        col = {r=0, g=200, b=100, a=255}
                     end
+                    directx.draw_texture(txt_contact, 0.005, 0.005, 0.5, 0.5, draw_pos.x, draw_pos.y, 0, col)
+                    local dist_str = 'D: ' .. tostring(math.floor(GetDistanceBetweenCoords(my_pos, coords)))
+                    
+                    directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.03, PLAYER.GET_PLAYER_NAME(ph), 0, 0.3, col)
+                    directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.02, dist_str, 0, 0.3, col)
+                    directx.draw_text(draw_pos.x + 0.01, draw_pos.y - 0.01, 'A: ' .. tostring(math.floor(coords.z)), 0, 0.3, col)
+                    directx.draw_text(draw_pos.x + 0.01, draw_pos.y, 'H: ' .. GetEntityMapDirection(ped_id), 0, 0.3, col)
                 end
-                util.yield(1)
-            end
+                return bContactThreadRunning
+                --util.yield(1)
+            --end
         end)
     end
 end

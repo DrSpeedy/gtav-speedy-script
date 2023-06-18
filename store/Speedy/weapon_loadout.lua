@@ -23,10 +23,24 @@ function LoadWeaponsFromFile(ped, profile)
             WEAPON.SET_PED_AMMO(ped, weapon, ammo_max)
         end
         package.loaded['store/' .. path] = nil
+        Notification('Weapons Loaded: ' .. profile)
     else
         Notification('file not found')
     end
 end
+
+--[[
+function SaveWeaponsToFile(ped, profile)
+    local path = 'Speedy/Loadouts/' .. profile
+    local cTab = '    '
+    local cNL = '\n'
+    local f = io.open(filesystem.store_dir() .. path .. '.lua', 'wb')
+    if f ~= nil then
+        f:write('return {' .. cNL)
+        -- Need table translating weapon hashes to model names :/
+    end
+end
+]]
 
 function MenuWeaponLoadoutSetup(menu_root)
     menu.action(menu_root, 'Test Load Loadout', {}, '', function() LoadWeaponsFromFile(players.user_ped(), 'test') end)
