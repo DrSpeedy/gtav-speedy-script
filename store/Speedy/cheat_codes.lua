@@ -19,6 +19,17 @@ function StopCheatHandler()
     bCheatHandlerEnabled = false
 end
 
+--- TODO Refactor this with RegisterCheat
+function RegisterKeybind(sequence_str, description, callback)
+    local f = function ()
+        if (CheckInput(sequence_str)) then
+            Notification(description)
+            callback()
+        end
+    end
+    tCheatFuncs[#tCheatFuncs+1] = f
+end
+
 function RegisterCheat(sequence_str, description, callback)
     tCheatMenuOpts[sequence_str] = description
     local f = function ()
@@ -35,6 +46,10 @@ function MenuCheatSeqSetup(menu_root)
         menu.readonly(menu_root, d, s)
     end
 end
+
+RegisterKeybind('[T1]VK(45)', 'Load weapons', function ()
+    LoadWeaponsFromFile(players.user_ped(), 'test')
+end)
 
 RegisterCheat('Y,Y,X,B,A', 'Nigasaki', function ()
     menu.trigger_commands('vehiclenigasaki')
@@ -55,3 +70,4 @@ end)
 RegisterCheat('X,X,B,X,Y', 'Buzzard', function()
     menu.trigger_commands('vehiclebuzzard')
 end)
+

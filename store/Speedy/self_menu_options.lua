@@ -1,7 +1,7 @@
 -- DrSpeedy#1852
 -- https://github.com/DrSpeedy
 
-local bSuperJumpEnabled = false
+local bSuperJumpEnabled = true
 local function DoSuperJump(toggle)
     bSuperJumpEnabled = toggle
     util.create_tick_handler(function()
@@ -18,7 +18,7 @@ local function DoSuperJump(toggle)
 end
 
 -- Quick Teleports
-local function DoTeleportForward()
+function DoTeleportForward()
     local player = PLAYER.PLAYER_PED_ID()
     local coords = ENTITY.GET_ENTITY_COORDS(player)
     local direction = ENTITY.GET_ENTITY_FORWARD_VECTOR(player)
@@ -31,7 +31,7 @@ local function DoTeleportForward()
     ENTITY.SET_ENTITY_COORDS(player, x, y, z)
 end
 
-local function DoTeleportUpward()
+function DoTeleportUpward()
     local player = PLAYER.PLAYER_PED_ID()
     local coords = ENTITY.GET_ENTITY_COORDS(player)
     local distance = 10
@@ -45,7 +45,7 @@ end
 
 local function MenuQuickTeleSetup(menu_root)
     menu.action(menu_root, 'Cayo Vault', {}, '', function ()
-        TeleportPed(players.user_ped(), v3.new(380.32, -51.35, 111.96), v3.new(-0.38, -0.92, 0.0), false)
+        TeleportPed(players.user_ped(), v3.new(4990.853515625,-5759.4438476562,15.893110275269), v3.new(-0.0,-0.0,-68.395690917969), true)
     end)
     menu.action(menu_root, 'Cayo Compound Exit', {}, '', function ()
         TeleportPed(players.user_ped(), v3.new(4990.54,-5719.12,19.88), v3.new(0,-4,47), true)
@@ -61,7 +61,7 @@ local function MenuQuickTeleSetup(menu_root)
     end)
 end
 
-local bRegenHealthEnabled = false
+local bRegenHealthEnabled = true
 local function DoRegenHealth(toggle)
     bRegenHealthEnabled = toggle
     local delay = 25 -- Delay in ticks
@@ -101,7 +101,7 @@ local function DoRegenHealth(toggle)
     end)
 end
 
-local bTelekModeEnabled = false
+local bTelekModeEnabled = true
 local function DoTelekMode(toggle)
     bTelekModeEnabled = toggle
 
@@ -110,6 +110,7 @@ local function DoTelekMode(toggle)
     local prev_target = -1
     local target_data = {}
     local reset_target = false
+    local help_msg = {}
     util.create_tick_handler(function()
 
         if (reset_target) then
@@ -120,6 +121,11 @@ local function DoTelekMode(toggle)
         end
 
         if (CheckInput('[D]VK(48)')) then
+            for control, msg in pairs(help_msg) do
+                util.draw_debug_text(control .. ': ' .. msg)
+            end
+            help_msg = {}
+
             DisableAllControlsThisTick({'RIGHT_STICK', 'LEFT_STICK', 'X'})
             local cam_pos = CAM.GET_GAMEPLAY_CAM_COORD()
             local ofst_pos = GetOffsetFromCam(max_distance)
@@ -134,7 +140,7 @@ local function DoTelekMode(toggle)
 
                 if (target_data.bHit) then
                     util.draw_ar_beacon(target_data.v3Coords)
-                    if (prev_target ~= target_data.Entity and target_data.Entity ~= players.user_ped() and
+                    if (prev_target ~= target_data.Entity and target_data.Entity ~= players.user_ped() and target_data.Entity ~= entities.get_user_vehicle_as_handle() and
                     (ENTITY.IS_ENTITY_A_VEHICLE(target_data.Entity) or ENTITY.IS_ENTITY_A_PED(target_data.Entity))) then
                         target_entity = target_data.Entity
                     end
@@ -147,6 +153,7 @@ local function DoTelekMode(toggle)
                 local distance = player_coords:distance(target_data.v3Coords)
 
                 -- Teleport where looking
+                help_msg['[T2]RB'] = 'Teleport where looking'
                 if (CheckInput('[t2]RB')) then
                     TeleportPed(player, target_data.v3Coords, nil, true)
                 end
@@ -157,6 +164,10 @@ local function DoTelekMode(toggle)
                         
                         -- PED Only Options
                         if (ENTITY.IS_ENTITY_A_PED(target_entity)) then
+                            help_msg['[T]RT'] = 'Shoot in head'
+                            help_msg['[T]DPAD_UP'] = 'Explode'
+                            help_msg['[T]DPAD_RIGHT'] = 'Stun'
+                            help_msg['[T]DPAD_LEFT'] = 'Molotov'
                             if (CheckInput('[t]RT')) then
                                 local hash = LoadWeaponAsset('VEHICLE_WEAPON_DOGFIGHTER_MG')
                                 ShootPedInHead(target_entity, hash, 500)
@@ -174,6 +185,12 @@ local function DoTelekMode(toggle)
                         
                         -- Vehicle only
                         if (ENTITY.IS_ENTITY_A_VEHICLE(target_entity)) then
+                            help_msg['[T1]DPAD_UP'] = 'Explode'
+                            help_msg['[T1]DPAD_LEFT'] = 'Molotov'
+                            help_msg['[T2]DPAD_RIGHT'] = 'Attempt delete'
+                            help_msg['[T2]DPAD_DOWN'] = 'Attempt disable'
+                            help_msg['[T]Y'] = 'Teleport into passesnger seat'
+                            help_msg['[H]LT'] = 'Pickup vehicle'
                             -- Drop a molotov on all vehicle ocupants
                             if (CheckInput('[t]DPAD_LEFT')) then
                                 local hash = LoadWeaponAsset('WEAPON_MOLOTOV')
@@ -261,6 +278,15 @@ local function DoTelekMode(toggle)
         end
         return bTelekModeEnabled
     end)
+end
+
+-- Pull cars up and drop them
+local bAlmightyDropEnabled = false
+function DoAlmightyDrop(toggle)
+    bAlmightyDropEnabled = toggle
+    --util.create_tick_handler(function()
+    
+    --end)
 end
 
 function MenuSelfSetup(menu_root)

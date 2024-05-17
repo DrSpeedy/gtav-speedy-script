@@ -2,12 +2,12 @@
 -- https://github.com/DrSpeedy
 
 -- Super Run variables
-local sr_speed_limit = 120
+local sr_speed_limit = 77
 local sr_base_speed = 10
 local sr_accel_mult = 0.77
 local sr_brake_mult = 0.66
 
-local bSuperRunEnabled = false
+local bSuperRunEnabled = true
 
 local function DoSuperRun(toggle)
 	bSuperRunEnabled = toggle

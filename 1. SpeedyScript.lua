@@ -75,7 +75,7 @@ end
 require 'lib/Speedy/Keys'
 require 'store/Speedy/util'
 require 'store/Speedy/pad_handler'
-require 'store/Speedy/cheat_codes'
+
 -- Self
 require 'store/Speedy/superrun_options'
 require 'store/Speedy/superflight_options'
@@ -88,7 +88,7 @@ require 'store/Speedy/online_quick_opts'
 -- Misc
 require 'store/Speedy/debug_options'
 require 'store/Speedy/about'
-
+require 'store/Speedy/cheat_codes'
 -- Flight HUD
 require 'store/Speedy/flight_hud'
 
@@ -150,5 +150,7 @@ end
 Init()
 while true do
     -- Global script yield
+    --HUD.SET_BIGMAP_ACTIVE(false, false)
+    --HUD.DISPLAY_RADAR(true)
 	util.yield()
 end

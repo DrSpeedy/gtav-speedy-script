@@ -1,8 +1,8 @@
-local bAimbotEnabled = false
-local bTargetPlayers = false
-local bTargetNPCs = false
+local bAimbotEnabled = true
+local bTargetPlayers = true
+local bTargetNPCs = true
 local bTargetFriends = false
-local bUseFOV = false
+local bUseFOV = true
 
 local aIgnoreWeaponList = {
     -1813897027,    -- Grenade

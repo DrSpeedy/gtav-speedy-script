@@ -2,7 +2,7 @@
 -- DrSpeedy#1852
 -- https://github.com/DrSpeedy
 
-local bSuperFlightEnabled = false
+local bSuperFlightEnabled = true
 local bSuperFlightWeaponsEnabled = false
 local bSuperFlightWeapAimbotEnabled = false
 local aSpeedMults = {70, 110, 160, 300}
