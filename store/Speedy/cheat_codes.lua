@@ -47,9 +47,9 @@ function MenuCheatSeqSetup(menu_root)
     end
 end
 
-RegisterKeybind('[T1]VK(45)', 'Load weapons', function ()
-    LoadWeaponsFromFile(players.user_ped(), 'test')
-end)
+--RegisterKeybind('[T1]VK(45)', 'Load weapons', function ()
+--    LoadWeaponsFromFile(players.user_ped(), 'test')
+--end)
 
 RegisterCheat('Y,Y,X,B,A', 'Nigasaki', function ()
     menu.trigger_commands('vehiclenigasaki')

@@ -31,9 +31,19 @@ local function DoAimbot(toggle)
         if (PED.IS_PED_SHOOTING(players.user_ped())) then
             local max_distance = 10000
 
-            local cam_pos = CAM.GET_GAMEPLAY_CAM_COORD()
+            local cam_pos = CAM.GET_GAMEPLAY_CAM_COORD() 
             local ofst_pos = GetOffsetFromCam(max_distance)
-            local shape_test = StartShapeTest(cam_pos, ofst_pos, 319, 0, 7)
+
+            if (PED.IS_PED_IN_ANY_VEHICLE(players.user_ped(), false)) then
+                local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), false)
+                if (VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == players.user_ped()) then
+                    local fwd = ENTITY.GET_ENTITY_FORWARD_VECTOR(vehicle)
+                    cam_pos = ENTITY.GET_ENTITY_COORDS(vehicle)
+                    ofst_pos = fwd:mul(max_distance):add(cam_pos)
+                end
+            end
+
+            local shape_test = StartShapeTest(cam_pos, ofst_pos, 319, 0, 7) 
             local data = GetShapeTestResult(shape_test)
 
             local target = {}
@@ -50,6 +60,9 @@ local function DoAimbot(toggle)
             end
             if (target.iPedId ~= -1) then
                 local weapon = WEAPON.GET_SELECTED_PED_WEAPON(players.user_ped())
+                if (weapon == 0) then
+                    weapon = 2210333304
+                end
                 local dmg = WEAPON.GET_WEAPON_DAMAGE(weapon, 0)
                 local shoot = true
                 for h = 1, #aIgnoreWeaponList do
